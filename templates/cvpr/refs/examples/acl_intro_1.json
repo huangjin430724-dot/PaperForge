@@ -1,0 +1,12 @@
+{
+  "id": "acl_intro_1",
+  "section": "introduction",
+  "title": "Academic introduction exemplar",
+  "english": "Writing high-quality research papers requires more than sentence-level fluency. Authors must preserve technical meaning, maintain consistent terminology, and present their contributions in a style that matches the expectations of the target venue. These requirements are especially challenging when a manuscript starts from a Chinese draft and must be converted into an English LaTeX paper. A practical writing assistant should therefore combine translation, retrieval, and structured project memory rather than treating each paragraph as an isolated input.",
+  "style_notes": [
+    "Begin with a broad motivation that readers can recognize.",
+    "Narrow the discussion toward the concrete writing problem.",
+    "Explain why the problem is difficult in realistic workflows.",
+    "End by motivating the need for the proposed system."
+  ]
+}

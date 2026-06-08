@@ -1,0 +1,43 @@
+{
+  "examples": [
+    {
+      "id": "acl_abstract_1",
+      "section": "abstract",
+      "venue": "NeurIPS",
+      "keywords": [
+        "academic writing",
+        "translation",
+        "LaTeX",
+        "terminology",
+        "retrieval"
+      ],
+      "file": "acl_abstract_1.json"
+    },
+    {
+      "id": "acl_intro_1",
+      "section": "introduction",
+      "venue": "NeurIPS",
+      "keywords": [
+        "academic writing",
+        "translation",
+        "LaTeX",
+        "terminology",
+        "retrieval"
+      ],
+      "file": "acl_intro_1.json"
+    },
+    {
+      "id": "acl_method_1",
+      "section": "method",
+      "venue": "NeurIPS",
+      "keywords": [
+        "academic writing",
+        "translation",
+        "LaTeX",
+        "terminology",
+        "retrieval"
+      ],
+      "file": "acl_method_1.json"
+    }
+  ]
+}

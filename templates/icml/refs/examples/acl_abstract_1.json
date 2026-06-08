@@ -1,0 +1,12 @@
+{
+  "id": "acl_abstract_1",
+  "section": "abstract",
+  "title": "Academic abstract exemplar",
+  "english": "We study the problem of improving reliability in long-context academic writing workflows. Existing systems can produce fluent drafts, but they often struggle with terminology consistency, controllable tool use, and faithful preservation of technical claims. To address these issues, we introduce a reference-guided translation pipeline that combines terminology constraints with dynamically retrieved writing exemplars. Experiments on representative manuscript editing tasks show that the proposed pipeline produces more consistent LaTeX-ready English drafts while preserving the original technical meaning.",
+  "style_notes": [
+    "State the research problem in the opening sentence.",
+    "Identify the limitations of existing approaches before introducing the method.",
+    "Use one concise sentence to summarize the proposed system.",
+    "End with the main empirical or practical benefit."
+  ]
+}

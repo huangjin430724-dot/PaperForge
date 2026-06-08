@@ -1,0 +1,36 @@
+{
+  "name": "PaperForge",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm --workspace apps/backend run dev\" \"npm --workspace apps/frontend run dev\"",
+    "dev:backend": "npm --workspace apps/backend run dev",
+    "dev:frontend": "npm --workspace apps/frontend run dev",
+    "build": "npm --workspace apps/frontend run build",
+    "preview": "npm --workspace apps/frontend run preview",
+    "typecheck": "npm --workspace apps/frontend run typecheck",
+    "lint": "eslint .",
+    "test": "npm --workspaces --if-present run test",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "tunnel": "npm run build && cross-env PaperForge_TUNNEL=localtunnel node apps/backend/src/index.js",
+    "tunnel:cf": "npm run build && cross-env PaperForge_TUNNEL=cloudflared node apps/backend/src/index.js",
+    "tunnel:ngrok": "npm run build && cross-env PaperForge_TUNNEL=ngrok node apps/backend/src/index.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "eslint": "^10.4.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "typescript-eslint": "^8.59.4"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  }
+}

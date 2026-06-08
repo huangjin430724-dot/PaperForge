@@ -1,0 +1,12 @@
+{
+  "id": "acl_method_1",
+  "section": "method",
+  "title": "Academic method exemplar",
+  "english": "The proposed workflow consists of four stages. First, the system reads the preserved Chinese source manuscript and identifies section signals, technical terms, and topic cues. Second, it converts these cues into a concise retrieval query and collects relevant papers from external scholarly search services. Third, it synthesizes short writing exemplars and style notes from the retrieved abstracts without copying their original text. Finally, it injects the terminology constraints and generated exemplars into the LaTeX translation prompt, allowing the model to produce a faithful English draft while maintaining the project structure.",
+  "style_notes": [
+    "Use a staged description for multi-module systems.",
+    "For each stage, describe the input, operation, and output.",
+    "Avoid implementation trivia unless it affects reproducibility.",
+    "Connect the method design to the final writing objective."
+  ]
+}
