@@ -100,6 +100,20 @@ type RetrievedWritingExample = {
   keywords?: string[];
 };
 
+type WritingStyleGuide = {
+  venue?: string;
+  tone?: string;
+  audience?: string;
+  goals?: string[];
+  avoid?: string[];
+  prefer?: string[];
+  sentenceRules?: string[];
+  citationRules?: string[];
+  latexRules?: string[];
+  sectionRules?: Record<string, string[]>;
+  examplesPolicy?: string;
+};
+
 
 type ReviewScores = {
   novelty: number;
@@ -556,6 +570,52 @@ function matchTermbaseEntries(
   }
 
   return hits;
+}
+
+async function loadStyleGuide(projectId: string, filePath = 'refs/styleguide.json') {
+  try {
+    const data = await getFile(projectId, filePath);
+    return safeJsonParse<WritingStyleGuide>(data.content || '{}');
+  } catch {
+    return null;
+  }
+}
+
+function buildStyleGuidePromptBlock(styleGuide: WritingStyleGuide | null, sectionType: string) {
+  if (!styleGuide) return '';
+
+  const lines: string[] = ['Project writing style guide:'];
+  if (styleGuide.venue) lines.push(`- Target venue/style: ${styleGuide.venue}`);
+  if (styleGuide.tone) lines.push(`- Tone: ${styleGuide.tone}`);
+  if (styleGuide.audience) lines.push(`- Audience: ${styleGuide.audience}`);
+
+  const appendList = (label: string, values?: string[]) => {
+    const cleaned = normalizeStringArray(values);
+    if (cleaned.length === 0) return;
+    lines.push(`- ${label}:`);
+    cleaned.forEach((value) => lines.push(`  - ${value}`));
+  };
+
+  appendList('Writing goals', styleGuide.goals);
+  appendList('Preferred practices', styleGuide.prefer);
+  appendList('Avoid', styleGuide.avoid);
+  appendList('Sentence rules', styleGuide.sentenceRules);
+  appendList('Citation rules', styleGuide.citationRules);
+  appendList('LaTeX rules', styleGuide.latexRules);
+
+  const sectionRules = styleGuide.sectionRules || {};
+  const sectionSpecific = normalizeStringArray(sectionRules[sectionType] || sectionRules.general);
+  if (sectionSpecific.length > 0) {
+    lines.push(`- Section-specific rules for ${sectionType}:`);
+    sectionSpecific.forEach((value) => lines.push(`  - ${value}`));
+  }
+
+  if (styleGuide.examplesPolicy) {
+    lines.push(`- Reference example policy: ${styleGuide.examplesPolicy}`);
+  }
+  lines.push('Apply this style guide unless it conflicts with source faithfulness, LaTeX validity, or explicit user requirements.');
+
+  return lines.join('\n');
 }
 
 async function loadExampleIndex(projectId: string, filePath = 'refs/examples/index.json') {
@@ -3131,7 +3191,7 @@ export default function EditorPage() {
 
   const buildExamplePromptBlock = useCallback(
     async (sourceText: string) => {
-      const indexPath = resolveProjectPath('refs/examples/index.json', 'refs\examples\index.json');
+      const indexPath = resolveProjectPath('refs/examples/index.json', 'refs\\examples\\index.json');
       if (!indexPath) return '';
 
       const index = await loadExampleIndex(projectId, indexPath);
@@ -3145,7 +3205,7 @@ export default function EditorPage() {
       for (const item of selected) {
         const examplePath = resolveProjectPath(
           `refs/examples/${item.file}`,
-          `refs\examples\${item.file}`,
+          `refs\\examples\\${item.file}`,
           item.file
         );
         if (!examplePath) continue;
@@ -4642,11 +4702,15 @@ export default function EditorPage() {
 
       if (!isChat && task === 'zh2en_latex') {
         const targetFile = mainFile || pickPreferredTexFile(texFiles) || activePath || 'main.tex';
-        const sourceZhPath = resolveProjectPath('drafts/source_zh.md', 'drafts\source_zh.md');
-        const termbasePath = resolveProjectPath('refs/termbase.json', 'refs\termbase.json');
+        const sourceZhPath = resolveProjectPath('drafts/source_zh.md', 'drafts\\source_zh.md');
+        const termbasePath = resolveProjectPath('refs/termbase.json', 'refs\\termbase.json');
+        const styleGuidePath = resolveProjectPath('refs/styleguide.json', 'refs\\styleguide.json');
         const sourceZh = sourceZhPath ? await ensureFileContent(sourceZhPath) : '';
         const termbase = termbasePath ? await loadTermbase(projectId, termbasePath) : {};
         const matchedTerms = matchTermbaseEntries(sourceZh || '', termbase);
+        const sectionType = inferPrimaryExampleSection(sourceZh || '');
+        const styleGuide = styleGuidePath ? await loadStyleGuide(projectId, styleGuidePath) : null;
+        const styleGuideBlock = buildStyleGuidePromptBlock(styleGuide, sectionType);
         const termbaseBlock =
           matchedTerms.length > 0
             ? [
@@ -4661,7 +4725,6 @@ export default function EditorPage() {
         const localExampleBlock = await buildExamplePromptBlock(sourceZh || '');
 
         let retrievedExampleBlock = '';
-        const sectionType = inferPrimaryExampleSection(sourceZh || '');
 
         try {
           const autoReferenceQuery = await buildReferenceQueryFromSource(
@@ -4715,6 +4778,7 @@ export default function EditorPage() {
           'Place the translated English paper content in the body of the target file, especially between \begin{document} and \end{document} when they exist.',
           'Keep all LaTeX commands valid. Escape LaTeX special characters in translated prose where necessary.',
           'Output only the final English LaTeX content or applicable patches. Do not output explanations or Markdown fences.',
+          styleGuideBlock,
           termbaseBlock,
           localExampleBlock,
           retrievedExampleBlock,
@@ -5542,7 +5606,7 @@ ${prompt}` : ''
                     </div>
                   )}
                   {assistantMode === 'agent' && task === 'zh2en_latex' && (
-                    <div className="muted">{t('中译英 LaTeX 会读取 drafts/source_zh.md 与 refs/termbase.json，并把英文 LaTeX 建议写入当前主文件。中文原稿不会被修改。')}</div>
+                    <div className="muted">{t('中译英 LaTeX 会读取 drafts/source_zh.md、refs/termbase.json 与 refs/styleguide.json，并把英文 LaTeX 建议写入当前主文件。中文原稿不会被修改。')}</div>
                   )}
                   <textarea
                     className="chat-input"

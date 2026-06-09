@@ -1,0 +1,54 @@
+{
+  "venue": "NeurIPS",
+  "tone": "clear, rigorous, technically grounded, appropriately cautious",
+  "audience": "machine learning and AI reviewers",
+  "goals": [
+    "Preserve the source manuscript's technical assumptions, claims, evidence, and limitations.",
+    "Make the method, empirical setup, and broader contribution easy to evaluate.",
+    "Use NeurIPS-style writing that balances motivation, rigor, and evidence."
+  ],
+  "prefer": [
+    "State limitations and scope when they appear in the source.",
+    "Use precise language for empirical findings and theoretical claims.",
+    "Connect method design choices to the problem being solved."
+  ],
+  "avoid": [
+    "Do not exaggerate impact or novelty.",
+    "Do not add missing experiments, citations, equations, or claims.",
+    "Do not obscure assumptions or limitations."
+  ],
+  "sentenceRules": [
+    "Use clear topic sentences for each paragraph.",
+    "Split dense source sentences when needed to preserve logic.",
+    "Avoid rhetorical or promotional phrasing."
+  ],
+  "citationRules": [
+    "Keep existing citation commands intact.",
+    "Do not invent citations.",
+    "Flag missing citations for broad related-work or benchmark claims only when needed."
+  ],
+  "latexRules": [
+    "Preserve equations, algorithm blocks, labels, refs, cites, tables, and figures.",
+    "Keep template and style files unchanged.",
+    "Ensure translated prose remains valid LaTeX."
+  ],
+  "sectionRules": {
+    "abstract": [
+      "Summarize problem, approach, and evidence without overselling."
+    ],
+    "introduction": [
+      "Frame the problem, gap, and contribution with clear motivation."
+    ],
+    "method": [
+      "Separate conceptual design from implementation details.",
+      "Use consistent notation and module names."
+    ],
+    "experiment": [
+      "Make comparison settings, metrics, and conclusions explicit."
+    ],
+    "general": [
+      "Write with clarity, caution, and technical precision."
+    ]
+  },
+  "examplesPolicy": "Use reference examples only for style and organization; do not copy their content or claims."
+}

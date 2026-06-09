@@ -1,0 +1,54 @@
+{
+  "venue": "ICML",
+  "tone": "rigorous, technical, measured, evidence-grounded",
+  "audience": "machine learning reviewers",
+  "goals": [
+    "Preserve assumptions, definitions, algorithmic steps, theoretical claims, and empirical results.",
+    "Make the learning problem, method design, and evaluation evidence explicit.",
+    "Use rigorous ICML-style writing without overstating conclusions."
+  ],
+  "prefer": [
+    "State problem setup and assumptions before method details.",
+    "Use consistent notation and terminology.",
+    "Connect empirical results to the claims they support."
+  ],
+  "avoid": [
+    "Do not invent theoretical guarantees or convergence claims.",
+    "Do not add new baselines, datasets, metrics, or numerical results.",
+    "Do not weaken important assumptions from the source."
+  ],
+  "sentenceRules": [
+    "Prefer precise logical connectors such as therefore, however, and in contrast.",
+    "Keep notation-bearing sentences syntactically simple.",
+    "Avoid vague intensifiers."
+  ],
+  "citationRules": [
+    "Preserve existing citations and references.",
+    "Do not invent citation keys.",
+    "Flag unsupported broad related-work claims when necessary."
+  ],
+  "latexRules": [
+    "Preserve equations, theorem-like environments, algorithm blocks, labels, refs, and citations.",
+    "Escape LaTeX special characters in prose.",
+    "Do not alter template files."
+  ],
+  "sectionRules": {
+    "abstract": [
+      "State the learning problem, method contribution, and main evidence compactly."
+    ],
+    "introduction": [
+      "Explain motivation, gap, and contribution in a logically ordered progression."
+    ],
+    "method": [
+      "Introduce notation before using it heavily.",
+      "Separate assumptions, algorithmic design, and implementation details."
+    ],
+    "experiment": [
+      "Tie each result to a clear evaluation question."
+    ],
+    "general": [
+      "Prioritize rigor, clarity, and source-faithful claims."
+    ]
+  },
+  "examplesPolicy": "Use examples for structure and academic phrasing only; never import external claims, equations, or citations."
+}

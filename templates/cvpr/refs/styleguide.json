@@ -1,0 +1,53 @@
+{
+  "venue": "CVPR",
+  "tone": "precise, visual-evidence-oriented, technical, concise",
+  "audience": "computer vision reviewers",
+  "goals": [
+    "Preserve task definitions, visual assumptions, datasets, metrics, and experimental claims.",
+    "Make the method pipeline, visual intuition, and empirical evidence easy to follow.",
+    "Use CVPR-style writing with concrete comparisons and careful claims."
+  ],
+  "prefer": [
+    "Describe visual inputs, representations, modules, losses, and outputs explicitly.",
+    "Connect qualitative observations to figures or tables when the source does so.",
+    "Use consistent terminology for datasets, architectures, and evaluation protocols."
+  ],
+  "avoid": [
+    "Do not invent datasets, benchmarks, visual examples, or numerical improvements.",
+    "Do not use vague claims such as visually better without evidence.",
+    "Do not alter figure, table, or label references."
+  ],
+  "sentenceRules": [
+    "Use compact sentences for experiment findings.",
+    "Introduce method components before abbreviating them.",
+    "Avoid ambiguous references such as this module when multiple modules are nearby."
+  ],
+  "citationRules": [
+    "Preserve existing citation commands and BibTeX keys.",
+    "Do not add unsupported comparison claims without citation."
+  ],
+  "latexRules": [
+    "Preserve figure, table, equation, label, ref, and cite commands.",
+    "Keep captions faithful to source content.",
+    "Do not modify style files or conference template commands."
+  ],
+  "sectionRules": {
+    "abstract": [
+      "State the vision task, core method idea, and key empirical outcome."
+    ],
+    "introduction": [
+      "Clarify the visual problem, limitation of prior approaches, and contribution."
+    ],
+    "method": [
+      "Describe the pipeline in execution order.",
+      "Specify inputs and outputs of each component."
+    ],
+    "experiment": [
+      "Make baselines, datasets, metrics, and ablations explicit."
+    ],
+    "general": [
+      "Keep visual evidence and technical claims grounded in the source."
+    ]
+  },
+  "examplesPolicy": "Use retrieved examples for CVPR-style discourse only; never copy their claims, data, figures, or citations."
+}

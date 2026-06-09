@@ -1,0 +1,54 @@
+{
+  "venue": "arXiv",
+  "tone": "clear, technical, complete, accessible to adjacent research areas",
+  "audience": "research readers who may not know every project detail",
+  "goals": [
+    "Preserve all technical meaning from the Chinese source.",
+    "Explain motivation and method clearly enough for a preprint audience.",
+    "Favor readability and complete context over extreme compression."
+  ],
+  "prefer": [
+    "Define specialized terms when they first appear.",
+    "Use explicit transitions between motivation, method, and evidence.",
+    "Keep claims traceable to the source manuscript."
+  ],
+  "avoid": [
+    "Do not overclaim novelty or generality.",
+    "Do not add missing experiments or citations as if they were in the source.",
+    "Do not remove limitations or uncertainty stated in the source."
+  ],
+  "sentenceRules": [
+    "Use direct and readable sentences.",
+    "Break overly dense Chinese sentences into multiple English sentences when needed.",
+    "Keep pronoun references unambiguous."
+  ],
+  "citationRules": [
+    "Preserve existing citation commands.",
+    "Do not invent BibTeX keys.",
+    "Flag citation gaps only when necessary."
+  ],
+  "latexRules": [
+    "Preserve LaTeX structure, labels, references, citations, figures, tables, and equations.",
+    "Escape special characters in normal prose.",
+    "Do not alter template or bibliography files unless explicitly requested."
+  ],
+  "sectionRules": {
+    "abstract": [
+      "Summarize the problem, approach, and main findings without excessive detail."
+    ],
+    "introduction": [
+      "Provide enough background for cross-area readers.",
+      "Make the gap and contribution explicit."
+    ],
+    "method": [
+      "Use stepwise descriptions for systems and algorithms."
+    ],
+    "experiment": [
+      "Tie observations directly to metrics, baselines, or qualitative findings."
+    ],
+    "general": [
+      "Prioritize clarity, fidelity, and complete context."
+    ]
+  },
+  "examplesPolicy": "Use examples as style references only; do not copy external content."
+}

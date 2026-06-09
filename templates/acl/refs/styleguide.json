@@ -1,0 +1,57 @@
+{
+  "venue": "ACL",
+  "tone": "concise, technical, neutral, evidence-grounded",
+  "audience": "NLP and computational linguistics reviewers",
+  "goals": [
+    "Preserve the original technical claims and argument order from the Chinese source.",
+    "Make the contribution, task setting, method motivation, and empirical evidence explicit.",
+    "Use ACL-style academic prose with clear problem framing and measured claims."
+  ],
+  "prefer": [
+    "Use precise terminology from refs/termbase.json.",
+    "Prefer short topic sentences followed by concrete technical details.",
+    "Use cautious verbs such as suggest, indicate, show, and demonstrate when discussing results."
+  ],
+  "avoid": [
+    "Do not use marketing language, exaggerated novelty claims, or unsupported superlatives.",
+    "Do not add datasets, metrics, citations, equations, or numerical results that are not in the source.",
+    "Do not overuse vague phrases such as significant improvement without evidence."
+  ],
+  "sentenceRules": [
+    "Keep most sentences under 28 words unless a LaTeX expression requires more space.",
+    "Use active voice for method contributions and passive voice only when the actor is unimportant.",
+    "Avoid long chains of subordinate clauses."
+  ],
+  "citationRules": [
+    "Preserve existing citation commands exactly.",
+    "Mark unsupported citation needs only when the source clearly makes a literature claim without a citation.",
+    "Do not invent citation keys."
+  ],
+  "latexRules": [
+    "Preserve labels, refs, cites, equations, figures, tables, and bibliography commands.",
+    "Escape LaTeX special characters in translated prose.",
+    "Do not modify class, style, bibliography, or template files."
+  ],
+  "sectionRules": {
+    "abstract": [
+      "State the problem, limitation, method, and result in a compact sequence.",
+      "Avoid background that belongs in the introduction."
+    ],
+    "introduction": [
+      "Move from broad motivation to concrete gap, then to contribution.",
+      "Separate task motivation, technical challenge, and paper contribution."
+    ],
+    "method": [
+      "Describe inputs, operations, and outputs for each component.",
+      "Use consistent names for modules and variables."
+    ],
+    "experiment": [
+      "Report what is compared, what is measured, and what the results support.",
+      "Avoid conclusions that exceed the stated evidence."
+    ],
+    "general": [
+      "Maintain a clear academic register and preserve source meaning."
+    ]
+  },
+  "examplesPolicy": "Use retrieved and local examples for discourse structure and phrasing patterns only; never copy their claims, data, citations, or equations."
+}
