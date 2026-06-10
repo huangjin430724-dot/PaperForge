@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "generatedAt": "",
+  "source": "template",
+  "summary": {
+    "total": 0,
+    "supported": 0,
+    "partial": 0,
+    "weak": 0,
+    "mismatch": 0,
+    "missing": 0,
+    "high_risk": 0
+  },
+  "items": []
+}

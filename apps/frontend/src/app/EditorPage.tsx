@@ -243,6 +243,37 @@ type ClaimLedgerReport = {
   claims: ClaimLedgerItem[];
 };
 
+type CitationSupportStatus = 'supported' | 'partial' | 'weak' | 'mismatch' | 'missing' | string;
+
+type CitationVerifierItem = {
+  id: string;
+  claim: string;
+  location: string;
+  citation_keys: string[];
+  support_status: CitationSupportStatus;
+  risk: 'critical' | 'major' | 'minor' | 'low' | string;
+  reason: string;
+  suggestion: string;
+  evidence_refs?: string[];
+  replacement_queries?: string[];
+};
+
+type CitationVerifierReport = {
+  version?: number;
+  generatedAt?: string;
+  source?: string;
+  summary: {
+    total: number;
+    supported: number;
+    partial: number;
+    weak: number;
+    mismatch: number;
+    missing: number;
+    high_risk: number;
+  };
+  items: CitationVerifierItem[];
+};
+
 interface PendingChange {
   filePath: string;
   original: string;
@@ -1541,6 +1572,85 @@ function formatClaimLedgerMarkdown(report: ClaimLedgerReport) {
     `- High risk: ${report.summary.high_risk}`,
     '',
     rows || '未发现需要记录的关键论点。'
+  ].join('\n');
+}
+
+function normalizeCitationSupportStatus(value: unknown) {
+  const raw = String(value || 'weak').toLowerCase().trim();
+  if (raw === 'supported' || raw === 'partial' || raw === 'weak' || raw === 'mismatch' || raw === 'missing') return raw;
+  return 'weak';
+}
+
+function parseCitationVerifierReport(raw: string): CitationVerifierReport | null {
+  const block = extractJsonBlock(raw);
+  const parsed = safeJsonParse<any>(block || raw);
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  const items = Array.isArray(parsed.items)
+    ? parsed.items.map((item: any, idx: number) => ({
+        id: String(item?.id || `citation_check_${idx + 1}`).trim(),
+        claim: String(item?.claim || '').trim(),
+        location: String(item?.location || '').trim(),
+        citation_keys: normalizeStringArray(item?.citation_keys),
+        support_status: normalizeCitationSupportStatus(item?.support_status),
+        risk: normalizeClaimRisk(item?.risk),
+        reason: String(item?.reason || '').trim(),
+        suggestion: String(item?.suggestion || '').trim(),
+        evidence_refs: normalizeStringArray(item?.evidence_refs),
+        replacement_queries: normalizeStringArray(item?.replacement_queries)
+      })).filter((item: CitationVerifierItem) => item.claim)
+    : [];
+
+  const supported = items.filter((item: CitationVerifierItem) => item.support_status === 'supported').length;
+  const partial = items.filter((item: CitationVerifierItem) => item.support_status === 'partial').length;
+  const weak = items.filter((item: CitationVerifierItem) => item.support_status === 'weak').length;
+  const mismatch = items.filter((item: CitationVerifierItem) => item.support_status === 'mismatch').length;
+  const missing = items.filter((item: CitationVerifierItem) => item.support_status === 'missing').length;
+  const highRisk = items.filter((item: CitationVerifierItem) => item.risk === 'critical' || item.risk === 'major').length;
+
+  return {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    source: 'citation-verifier-agent',
+    summary: {
+      total: items.length,
+      supported,
+      partial,
+      weak,
+      mismatch,
+      missing,
+      high_risk: highRisk
+    },
+    items
+  };
+}
+
+function formatCitationVerifierMarkdown(report: CitationVerifierReport) {
+  const rows = report.items.map((item, idx) =>
+    [
+      `### ${idx + 1}. ${item.location || 'Unknown location'}`,
+      `- Claim: ${item.claim}`,
+      `- Citations: ${item.citation_keys.length ? item.citation_keys.join(', ') : '(none)'}`,
+      `- Support status: ${item.support_status}`,
+      `- Risk: ${item.risk}`,
+      item.evidence_refs?.length ? `- Evidence refs: ${item.evidence_refs.join(', ')}` : '',
+      item.replacement_queries?.length ? `- Replacement queries: ${item.replacement_queries.join('; ')}` : '',
+      item.reason ? `- Reason: ${item.reason}` : '',
+      item.suggestion ? `- Suggestion: ${item.suggestion}` : ''
+    ].filter(Boolean).join('\n')
+  ).join('\n\n');
+
+  return [
+    '# 引用支撑检查 Citation Verifier',
+    `- Total checked claims: ${report.summary.total}`,
+    `- Supported: ${report.summary.supported}`,
+    `- Partial: ${report.summary.partial}`,
+    `- Weak: ${report.summary.weak}`,
+    `- Mismatch: ${report.summary.mismatch}`,
+    `- Missing: ${report.summary.missing}`,
+    `- High risk: ${report.summary.high_risk}`,
+    '',
+    rows || '未发现可检查的引用论点。'
   ].join('\n');
 }
 
@@ -3770,6 +3880,128 @@ export default function EditorPage() {
       );
     } catch (err) {
       setReviewNotes((prev) => [{ title: t('论点台账'), content: t('生成失败: {{error}}', { error: String(err) }) }, ...prev.filter((item) => item.content !== t('生成中...'))]);
+      setReviewReport(t('生成失败: {{error}}', { error: String(err) }));
+    } finally {
+      setReviewReportBusy(false);
+    }
+  }, [
+    reviewReportBusy,
+    resolveProjectPath,
+    ensureFileContent,
+    projectId,
+    activePath,
+    compileLog,
+    llmConfig,
+    writeFileCompat,
+    refreshTree,
+    t
+  ]);
+
+  const runCitationVerifier = useCallback(async () => {
+    if (reviewReportBusy) return;
+
+    setReviewReportBusy(true);
+    setRightView('review');
+    setReviewNotes((prev) => [{ title: t('引用支撑检查'), content: t('生成中...') }, ...prev]);
+
+    try {
+      const evidencePath = resolveProjectPath('refs/evidence/lit_matrix.json', 'refs\\evidence\\lit_matrix.json');
+      const ledgerPath = resolveProjectPath('refs/evidence/claim_ledger.json', 'refs\\evidence\\claim_ledger.json');
+      let evidencePreview = '';
+      let ledgerPreview = '';
+      try {
+        evidencePreview = evidencePath ? await ensureFileContent(evidencePath) : '';
+      } catch {
+        evidencePreview = '';
+      }
+      try {
+        ledgerPreview = ledgerPath ? await ensureFileContent(ledgerPath) : '';
+      } catch {
+        ledgerPreview = '';
+      }
+
+      const res = await runAgent({
+        task: 'citation_verifier',
+        prompt: [
+          'Read all .tex and .bib files in the project using list_files and read_file tools.',
+          'If refs/evidence/claim_ledger.json exists, read it and use it as the claim list.',
+          'If refs/evidence/lit_matrix.json exists, read it and use it as the literature evidence matrix.',
+          'Verify whether each cited claim is actually supported by its nearby citation keys and available bibliography/evidence.',
+          'This is not a missing-citation check. Focus on citations that exist but may be weak, partial, mismatched, too broad, or unrelated to the claim.',
+          'If a claim has no citation but should be cited, mark support_status as missing.',
+          'Do not invent paper contents beyond available BibTeX titles, abstracts/evidence matrix rows, or manuscript context.',
+          'When support is weak or mismatched, suggest a safer wording or replacement search query.',
+          'Return JSON only.',
+          JSON.stringify(
+            {
+              summary: {
+                total: 0,
+                supported: 0,
+                partial: 0,
+                weak: 0,
+                mismatch: 0,
+                missing: 0,
+                high_risk: 0
+              },
+              items: [
+                {
+                  id: 'citation_check_1',
+                  claim: '...',
+                  location: 'file and section',
+                  citation_keys: ['key1'],
+                  support_status: 'supported | partial | weak | mismatch | missing',
+                  risk: 'critical | major | minor | low',
+                  reason: '...',
+                  suggestion: '...',
+                  evidence_refs: ['claim ledger id / lit matrix id / paper title if relevant'],
+                  replacement_queries: ['optional search query for better citation']
+                }
+              ]
+            },
+            null,
+            2
+          ),
+          ledgerPreview ? `Current claim_ledger preview:\n${ledgerPreview.slice(0, 5000)}` : '',
+          evidencePreview ? `Current lit_matrix preview:\n${evidencePreview.slice(0, 5000)}` : ''
+        ].filter(Boolean).join('\n\n'),
+        selection: '',
+        content: '',
+        mode: 'tools',
+        projectId,
+        activePath,
+        compileLog,
+        llmConfig,
+        interaction: 'agent',
+        history: []
+      });
+
+      const parsed = parseCitationVerifierReport(res.reply || '');
+      if (!parsed) {
+        setReviewNotes((prev) => [{ title: t('引用支撑检查'), content: t('生成失败：未解析到有效 JSON。') }, ...prev.filter((item) => item.content !== t('生成中...'))]);
+        return;
+      }
+
+      const verifierPath = resolveProjectPath('refs/evidence/citation_verifier.json', 'refs\\evidence\\citation_verifier.json');
+      const verifierContent = JSON.stringify(parsed, null, 2);
+      await writeFileCompat(verifierPath, verifierContent);
+      setFiles((prev) => ({ ...prev, [verifierPath]: verifierContent }));
+      await refreshTree();
+
+      const markdown = formatCitationVerifierMarkdown(parsed);
+      setReviewReport(markdown);
+      setReviewNotes((prev) => [
+        { title: t('引用支撑检查'), content: markdown },
+        { title: t('引用支撑检查(JSON)'), content: '```json\n' + verifierContent + '\n```' },
+        ...prev.filter((item) => item.content !== t('生成中...'))
+      ]);
+      setStatus(
+        t('引用支撑检查完成 · {{count}} 条引用论点 · 高风险 {{risk}} 条', {
+          count: parsed.summary.total,
+          risk: parsed.summary.high_risk
+        })
+      );
+    } catch (err) {
+      setReviewNotes((prev) => [{ title: t('引用支撑检查'), content: t('生成失败: {{error}}', { error: String(err) }) }, ...prev.filter((item) => item.content !== t('生成中...'))]);
       setReviewReport(t('生成失败: {{error}}', { error: String(err) }));
     } finally {
       setReviewReportBusy(false);
@@ -6757,6 +6989,15 @@ Be thorough. Read ALL .tex files before reporting. Group findings by category. I
                         <span className="review-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/></svg></span>
                         <span className="review-btn-label">{t('论点台账')}</span>
                         <span className="review-btn-desc">{t('抽取 claim 并检查证据支撑')}</span>
+                      </button>
+                      <button
+                        className="review-btn"
+                        onClick={runCitationVerifier}
+                        disabled={reviewReportBusy}
+                      >
+                        <span className="review-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+                        <span className="review-btn-label">{t('引用支撑检查')}</span>
+                        <span className="review-btn-desc">{t('判断 citation 是否支撑 claim')}</span>
                       </button>
                       <button
                         className="review-btn"
