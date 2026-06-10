@@ -214,6 +214,35 @@ type StructuredCitationReport = {
   items: StructuredCitationItem[];
 };
 
+type ClaimEvidenceStatus = 'supported' | 'partial' | 'weak' | 'missing' | string;
+
+type ClaimLedgerItem = {
+  id: string;
+  claim: string;
+  location: string;
+  evidence_status: ClaimEvidenceStatus;
+  risk: 'critical' | 'major' | 'minor' | 'low' | string;
+  reason: string;
+  suggestion: string;
+  evidence_refs?: string[];
+  citation_keys?: string[];
+};
+
+type ClaimLedgerReport = {
+  version?: number;
+  generatedAt?: string;
+  source?: string;
+  summary: {
+    total: number;
+    supported: number;
+    partial: number;
+    weak: number;
+    missing: number;
+    high_risk: number;
+  };
+  claims: ClaimLedgerItem[];
+};
+
 interface PendingChange {
   filePath: string;
   original: string;
@@ -1433,6 +1462,86 @@ function parseStructuredCitationReport(raw: string): StructuredCitationReport | 
       severity: String(item?.severity || 'minor').trim()
     })) : []
   };
+}
+
+function normalizeClaimRisk(value: unknown) {
+  const raw = String(value || 'minor').toLowerCase().trim();
+  if (raw === 'critical' || raw === 'major' || raw === 'minor' || raw === 'low') return raw;
+  return 'minor';
+}
+
+function normalizeClaimEvidenceStatus(value: unknown) {
+  const raw = String(value || 'weak').toLowerCase().trim();
+  if (raw === 'supported' || raw === 'partial' || raw === 'weak' || raw === 'missing') return raw;
+  return 'weak';
+}
+
+function parseClaimLedgerReport(raw: string): ClaimLedgerReport | null {
+  const block = extractJsonBlock(raw);
+  const parsed = safeJsonParse<any>(block || raw);
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  const claims = Array.isArray(parsed.claims)
+    ? parsed.claims.map((item: any, idx: number) => ({
+        id: String(item?.id || `claim_${idx + 1}`).trim(),
+        claim: String(item?.claim || '').trim(),
+        location: String(item?.location || '').trim(),
+        evidence_status: normalizeClaimEvidenceStatus(item?.evidence_status),
+        risk: normalizeClaimRisk(item?.risk),
+        reason: String(item?.reason || '').trim(),
+        suggestion: String(item?.suggestion || '').trim(),
+        evidence_refs: normalizeStringArray(item?.evidence_refs),
+        citation_keys: normalizeStringArray(item?.citation_keys)
+      })).filter((item: ClaimLedgerItem) => item.claim)
+    : [];
+
+  const supported = claims.filter((item: ClaimLedgerItem) => item.evidence_status === 'supported').length;
+  const partial = claims.filter((item: ClaimLedgerItem) => item.evidence_status === 'partial').length;
+  const weak = claims.filter((item: ClaimLedgerItem) => item.evidence_status === 'weak').length;
+  const missing = claims.filter((item: ClaimLedgerItem) => item.evidence_status === 'missing').length;
+  const highRisk = claims.filter((item: ClaimLedgerItem) => item.risk === 'critical' || item.risk === 'major').length;
+
+  return {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    source: 'claim-ledger-agent',
+    summary: {
+      total: claims.length,
+      supported,
+      partial,
+      weak,
+      missing,
+      high_risk: highRisk
+    },
+    claims
+  };
+}
+
+function formatClaimLedgerMarkdown(report: ClaimLedgerReport) {
+  const rows = report.claims.map((item, idx) =>
+    [
+      `### ${idx + 1}. ${item.location || 'Unknown location'}`,
+      `- Claim: ${item.claim}`,
+      `- Evidence status: ${item.evidence_status}`,
+      `- Risk: ${item.risk}`,
+      item.evidence_refs?.length ? `- Evidence refs: ${item.evidence_refs.join(', ')}` : '',
+      item.citation_keys?.length ? `- Citation keys: ${item.citation_keys.join(', ')}` : '',
+      item.reason ? `- Reason: ${item.reason}` : '',
+      item.suggestion ? `- Suggestion: ${item.suggestion}` : ''
+    ].filter(Boolean).join('\n')
+  ).join('\n\n');
+
+  return [
+    '# 论点台账 Claim Ledger',
+    `- Total claims: ${report.summary.total}`,
+    `- Supported: ${report.summary.supported}`,
+    `- Partial: ${report.summary.partial}`,
+    `- Weak: ${report.summary.weak}`,
+    `- Missing: ${report.summary.missing}`,
+    `- High risk: ${report.summary.high_risk}`,
+    '',
+    rows || '未发现需要记录的关键论点。'
+  ].join('\n');
 }
 
 function average(values: number[]) {
@@ -3566,6 +3675,117 @@ export default function EditorPage() {
     },
     [ensureFileContent, refreshTree, resolveProjectPath, writeFileCompat]
   );
+
+  const runClaimLedger = useCallback(async () => {
+    if (reviewReportBusy) return;
+
+    setReviewReportBusy(true);
+    setRightView('review');
+    setReviewNotes((prev) => [{ title: t('论点台账'), content: t('生成中...') }, ...prev]);
+
+    try {
+      const evidencePath = resolveProjectPath('refs/evidence/lit_matrix.json', 'refs\\evidence\\lit_matrix.json');
+      let evidencePreview = '';
+      try {
+        evidencePreview = evidencePath ? await ensureFileContent(evidencePath) : '';
+      } catch {
+        evidencePreview = '';
+      }
+
+      const res = await runAgent({
+        task: 'claim_ledger',
+        prompt: [
+          'Read all .tex files in the project using list_files and read_file tools.',
+          'If refs/evidence/lit_matrix.json exists, read it and use it as the available literature evidence matrix.',
+          'Build a claim ledger for the manuscript.',
+          'Extract the most important technical, empirical, novelty, comparison, and contribution claims.',
+          'For each claim, judge whether it is supported by manuscript evidence, citations, experiments, or the literature evidence matrix.',
+          'Do not invent missing experiments, citations, or evidence. If support is unclear, mark it as weak or missing.',
+          'Risk levels: critical means likely misleading or unsupported central claim; major means important but insufficiently supported; minor means local wording risk; low means acceptable.',
+          'Return JSON only.',
+          JSON.stringify(
+            {
+              summary: {
+                total: 0,
+                supported: 0,
+                partial: 0,
+                weak: 0,
+                missing: 0,
+                high_risk: 0
+              },
+              claims: [
+                {
+                  id: 'claim_1',
+                  claim: '...',
+                  location: 'file and section',
+                  evidence_status: 'supported | partial | weak | missing',
+                  risk: 'critical | major | minor | low',
+                  reason: '...',
+                  suggestion: '...',
+                  evidence_refs: ['lit_matrix row id/title/arxiv id if relevant'],
+                  citation_keys: ['existing citation keys if relevant']
+                }
+              ]
+            },
+            null,
+            2
+          ),
+          evidencePreview ? `Current lit_matrix preview:\n${evidencePreview.slice(0, 5000)}` : ''
+        ].filter(Boolean).join('\n\n'),
+        selection: '',
+        content: '',
+        mode: 'tools',
+        projectId,
+        activePath,
+        compileLog,
+        llmConfig,
+        interaction: 'agent',
+        history: []
+      });
+
+      const parsed = parseClaimLedgerReport(res.reply || '');
+      if (!parsed) {
+        setReviewNotes((prev) => [{ title: t('论点台账'), content: t('生成失败：未解析到有效 JSON。') }, ...prev.filter((item) => item.content !== t('生成中...'))]);
+        return;
+      }
+
+      const ledgerPath = resolveProjectPath('refs/evidence/claim_ledger.json', 'refs\\evidence\\claim_ledger.json');
+      const ledgerContent = JSON.stringify(parsed, null, 2);
+      await writeFileCompat(ledgerPath, ledgerContent);
+      setFiles((prev) => ({ ...prev, [ledgerPath]: ledgerContent }));
+      await refreshTree();
+
+      const markdown = formatClaimLedgerMarkdown(parsed);
+      setReviewReport(markdown);
+      setReviewNotes((prev) => [
+        { title: t('论点台账'), content: markdown },
+        { title: t('论点台账(JSON)'), content: '```json\n' + ledgerContent + '\n```' },
+        ...prev.filter((item) => item.content !== t('生成中...'))
+      ]);
+      setStatus(
+        t('论点台账完成 · {{count}} 条论点 · 高风险 {{risk}} 条', {
+          count: parsed.summary.total,
+          risk: parsed.summary.high_risk
+        })
+      );
+    } catch (err) {
+      setReviewNotes((prev) => [{ title: t('论点台账'), content: t('生成失败: {{error}}', { error: String(err) }) }, ...prev.filter((item) => item.content !== t('生成中...'))]);
+      setReviewReport(t('生成失败: {{error}}', { error: String(err) }));
+    } finally {
+      setReviewReportBusy(false);
+    }
+  }, [
+    reviewReportBusy,
+    resolveProjectPath,
+    ensureFileContent,
+    projectId,
+    activePath,
+    compileLog,
+    llmConfig,
+    writeFileCompat,
+    refreshTree,
+    t
+  ]);
 
   const buildProjectContext = useCallback(async () => {
     const root = mainFile || activePath;
@@ -6528,6 +6748,15 @@ Be thorough. Read ALL .tex files before reporting. Group findings by category. I
                         <span className="review-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
                         <span className="review-btn-label">{t('引用缺失')}</span>
                         <span className="review-btn-desc">{t('查找需要引用的论述')}</span>
+                      </button>
+                      <button
+                        className="review-btn"
+                        onClick={runClaimLedger}
+                        disabled={reviewReportBusy}
+                      >
+                        <span className="review-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/></svg></span>
+                        <span className="review-btn-label">{t('论点台账')}</span>
+                        <span className="review-btn-desc">{t('抽取 claim 并检查证据支撑')}</span>
                       </button>
                       <button
                         className="review-btn"
