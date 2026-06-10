@@ -114,6 +114,33 @@ type WritingStyleGuide = {
   examplesPolicy?: string;
 };
 
+type LiteratureEvidenceRow = {
+  id?: string;
+  title: string;
+  authors?: string[];
+  arxivId?: string;
+  url?: string;
+  query?: string;
+  section?: string;
+  problem?: string;
+  method?: string;
+  dataset?: string;
+  result?: string;
+  limitation?: string;
+  evidence?: string;
+  useFor?: string[];
+  keywords?: string[];
+  confidence?: number;
+  createdAt?: string;
+};
+
+type LiteratureEvidenceMatrix = {
+  version?: number;
+  updatedAt?: string;
+  source?: string;
+  rows?: LiteratureEvidenceRow[];
+};
+
 
 type ReviewScores = {
   novelty: number;
@@ -769,6 +796,114 @@ async function buildExamplesFromPapers(
   const block = extractJsonBlock(res.content);
   const parsed = safeJsonParse<{ examples?: RetrievedWritingExample[] }>(block || '');
   return parsed?.examples || [];
+}
+
+function fallbackEvidenceRowsFromPapers(
+  papers: ArxivPaper[],
+  query: string,
+  sectionType: string
+): LiteratureEvidenceRow[] {
+  return papers.map((paper) => ({
+    title: paper.title,
+    authors: paper.authors || [],
+    arxivId: paper.arxivId,
+    url: paper.url,
+    query,
+    section: sectionType,
+    problem: '',
+    method: '',
+    dataset: '',
+    result: '',
+    limitation: '',
+    evidence: (paper.abstract || '').slice(0, 700),
+    useFor: sectionType === 'introduction' ? ['introduction', 'related_work'] : [sectionType, 'related_work'],
+    keywords: [],
+    confidence: 0.45
+  }));
+}
+
+async function buildEvidenceRowsFromPapers(
+  papers: ArxivPaper[],
+  query: string,
+  sectionType: string,
+  llmConfig: { endpoint: string; apiKey?: string; model: string }
+) {
+  try {
+    const res = await callLLM({
+      llmConfig,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You build a literature evidence matrix for academic writing. ' +
+            'Given paper titles and abstracts, extract structured evidence for writing introduction, related work, and method motivation. ' +
+            'Do not invent facts beyond the provided abstracts. ' +
+            'Return JSON only: {"items":[{"title":"","problem":"","method":"","dataset":"","result":"","limitation":"","evidence":"","useFor":[],"keywords":[],"confidence":0.0}]}'
+        },
+        {
+          role: 'user',
+          content: JSON.stringify({ query, sectionType, papers })
+        }
+      ]
+    });
+
+    if (!res.ok || !res.content) {
+      return fallbackEvidenceRowsFromPapers(papers, query, sectionType);
+    }
+
+    const block = extractJsonBlock(res.content);
+    const parsed = safeJsonParse<{ items?: LiteratureEvidenceRow[] }>(block || '');
+    const items = parsed?.items || [];
+    if (items.length === 0) {
+      return fallbackEvidenceRowsFromPapers(papers, query, sectionType);
+    }
+
+    return papers.map((paper, idx) => {
+      const item = items[idx] || items.find((candidate) => candidate.title === paper.title) || {};
+      return {
+        title: paper.title,
+        authors: paper.authors || [],
+        arxivId: paper.arxivId,
+        url: paper.url,
+        query,
+        section: sectionType,
+        problem: item.problem || '',
+        method: item.method || '',
+        dataset: item.dataset || '',
+        result: item.result || '',
+        limitation: item.limitation || '',
+        evidence: item.evidence || (paper.abstract || '').slice(0, 700),
+        useFor: normalizeStringArray(item.useFor).slice(0, 5),
+        keywords: normalizeStringArray(item.keywords).slice(0, 8),
+        confidence: Math.max(0, Math.min(1, Number(item.confidence || 0.7)))
+      } satisfies LiteratureEvidenceRow;
+    });
+  } catch {
+    return fallbackEvidenceRowsFromPapers(papers, query, sectionType);
+  }
+}
+
+function buildEvidencePromptBlock(rows: LiteratureEvidenceRow[]) {
+  const usableRows = rows.filter((row) => row.title).slice(0, 5);
+  if (usableRows.length === 0) return '';
+
+  const blocks = usableRows.map((row, idx) =>
+    [
+      `[Evidence ${idx + 1}] ${row.title}`,
+      row.problem ? `Problem: ${row.problem}` : '',
+      row.method ? `Method: ${row.method}` : '',
+      row.dataset ? `Dataset/setting: ${row.dataset}` : '',
+      row.result ? `Finding: ${row.result}` : '',
+      row.limitation ? `Limitation: ${row.limitation}` : '',
+      row.evidence ? `Evidence note: ${row.evidence}` : ''
+    ].filter(Boolean).join('\n')
+  );
+
+  return [
+    'Retrieved literature evidence matrix:',
+    ...blocks,
+    'Use this matrix to understand research context, related-work framing, and evidence-grounded wording. Do not copy text verbatim and do not invent citations, datasets, numbers, or claims.'
+  ].join('\n\n');
 }
 
 function selectRelevantExamples(
@@ -3362,6 +3497,76 @@ export default function EditorPage() {
     [activePath, mainFile, projectId, refreshTree, resolveProjectPath, writeFileCompat]
   );
 
+  const persistLiteratureEvidenceMatrix = useCallback(
+    async (params: {
+      query: string;
+      sectionType: string;
+      rows: LiteratureEvidenceRow[];
+    }) => {
+      const { query, sectionType, rows } = params;
+      const usableRows = rows.filter((row) => row.title).slice(0, 8);
+      if (usableRows.length === 0) {
+        return { savedCount: 0, rows: usableRows };
+      }
+
+      const matrixPath = resolveProjectPath('refs/evidence/lit_matrix.json', 'refs\\evidence\\lit_matrix.json');
+      let existingRows: LiteratureEvidenceRow[] = [];
+      try {
+        const raw = await ensureFileContent(matrixPath);
+        const parsed = safeJsonParse<LiteratureEvidenceMatrix>(raw || '{}');
+        existingRows = Array.isArray(parsed?.rows) ? parsed.rows : [];
+      } catch {
+        existingRows = [];
+      }
+
+      const createdAt = new Date().toISOString();
+      const normalizedRows = usableRows.map((row, idx) => {
+        const sourceKey = row.arxivId || row.url || row.title || `${query}-${idx + 1}`;
+        return {
+          ...row,
+          id: row.id || `evidence_${slugForGeneratedExample(sourceKey)}_${Date.now().toString(36)}_${idx + 1}`,
+          query: row.query || query,
+          section: row.section || sectionType,
+          authors: row.authors || [],
+          useFor: normalizeStringArray(row.useFor).slice(0, 6),
+          keywords: normalizeStringArray(row.keywords).slice(0, 10),
+          confidence: Math.max(0, Math.min(1, Number(row.confidence || 0.65))),
+          createdAt
+        } satisfies LiteratureEvidenceRow;
+      });
+
+      const rowKey = (row: LiteratureEvidenceRow) =>
+        (row.arxivId || row.url || row.title || '').toLowerCase();
+      const merged = new Map<string, LiteratureEvidenceRow>();
+
+      for (const row of existingRows) {
+        const key = rowKey(row);
+        if (key) merged.set(key, row);
+      }
+      for (const row of normalizedRows) {
+        const key = rowKey(row);
+        if (key) merged.set(key, row);
+      }
+
+      const nextRows = Array.from(merged.values())
+        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+        .slice(0, 60);
+      const matrix: LiteratureEvidenceMatrix = {
+        version: 1,
+        source: 'dynamic-arxiv',
+        updatedAt: createdAt,
+        rows: nextRows
+      };
+      const matrixContent = JSON.stringify(matrix, null, 2);
+      await writeFileCompat(matrixPath, matrixContent);
+      setFiles((prev) => ({ ...prev, [matrixPath]: matrixContent }));
+      await refreshTree();
+
+      return { savedCount: normalizedRows.length, rows: normalizedRows };
+    },
+    [ensureFileContent, refreshTree, resolveProjectPath, writeFileCompat]
+  );
+
   const buildProjectContext = useCallback(async () => {
     const root = mainFile || activePath;
     if (!root) return '';
@@ -4725,6 +4930,7 @@ export default function EditorPage() {
         const localExampleBlock = await buildExamplePromptBlock(sourceZh || '');
 
         let retrievedExampleBlock = '';
+        let evidenceMatrixBlock = '';
 
         try {
           const autoReferenceQuery = await buildReferenceQueryFromSource(
@@ -4735,6 +4941,21 @@ export default function EditorPage() {
           );
           const papers = await retrieveReferencePapers(autoReferenceQuery, 3);
           if (papers.length > 0) {
+            const evidenceRows = await buildEvidenceRowsFromPapers(
+              papers,
+              autoReferenceQuery,
+              sectionType,
+              llmConfig
+            );
+            const persistedEvidence = await persistLiteratureEvidenceMatrix({
+              query: autoReferenceQuery,
+              sectionType,
+              rows: evidenceRows
+            });
+            evidenceMatrixBlock = buildEvidencePromptBlock(
+              persistedEvidence.rows.length > 0 ? persistedEvidence.rows : evidenceRows
+            );
+
             const retrievedExamples = await buildExamplesFromPapers(papers, sectionType, llmConfig);
             const persisted = await persistDynamicWritingExamples({
               query: autoReferenceQuery,
@@ -4750,8 +4971,8 @@ export default function EditorPage() {
             );
             setStatus(
               persisted.savedCount > 0
-                ? `自动参考检索: ${autoReferenceQuery} · 命中 ${papers.length} 篇 · 已写入 ${persisted.savedCount} 个 JSON`
-                : `自动参考检索: ${autoReferenceQuery} · 命中 ${papers.length} 篇`
+                ? `自动参考检索: ${autoReferenceQuery} · 命中 ${papers.length} 篇 · 已写入 ${persisted.savedCount} 个范文 JSON / ${persistedEvidence.savedCount} 条证据`
+                : `自动参考检索: ${autoReferenceQuery} · 命中 ${papers.length} 篇 · 已写入 ${persistedEvidence.savedCount} 条证据`
             );
           } else {
             setStatus(`自动参考检索: ${autoReferenceQuery} · 未命中结果，继续使用本地示例`);
@@ -4780,6 +5001,7 @@ export default function EditorPage() {
           'Output only the final English LaTeX content or applicable patches. Do not output explanations or Markdown fences.',
           styleGuideBlock,
           termbaseBlock,
+          evidenceMatrixBlock,
           localExampleBlock,
           retrievedExampleBlock,
           prompt ? `Additional user requirements:
@@ -5606,7 +5828,7 @@ ${prompt}` : ''
                     </div>
                   )}
                   {assistantMode === 'agent' && task === 'zh2en_latex' && (
-                    <div className="muted">{t('中译英 LaTeX 会读取 drafts/source_zh.md、refs/termbase.json 与 refs/styleguide.json，并把英文 LaTeX 建议写入当前主文件。中文原稿不会被修改。')}</div>
+                    <div className="muted">{t('中译英 LaTeX 会读取 drafts/source_zh.md、refs/termbase.json、refs/styleguide.json 与 refs/evidence/lit_matrix.json，并把英文 LaTeX 建议写入当前主文件。中文原稿不会被修改。')}</div>
                   )}
                   <textarea
                     className="chat-input"
