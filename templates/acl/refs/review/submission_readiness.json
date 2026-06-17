@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "generatedAt": "",
+  "source": "submission-readiness-agent",
+  "venue": "ACL",
+  "template": "ACL",
+  "readiness_score": 0,
+  "decision": "not_ready",
+  "summary": {
+    "critical": 0,
+    "major": 0,
+    "minor": 0,
+    "low": 0
+  },
+  "template_checks": [],
+  "manuscript_checks": [],
+  "citation_checks": [],
+  "experiment_checks": [],
+  "required_actions": [],
+  "optional_actions": []
+}

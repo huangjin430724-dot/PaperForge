@@ -284,6 +284,38 @@ type CitationVerifierReport = {
   items: CitationVerifierItem[];
 };
 
+type SubmissionReadinessIssue = {
+  id: string;
+  category: string;
+  severity: 'critical' | 'major' | 'minor' | 'low' | string;
+  location: string;
+  finding: string;
+  recommendation: string;
+  template_rule?: string;
+};
+
+type SubmissionReadinessReport = {
+  version?: number;
+  generatedAt?: string;
+  source?: string;
+  venue: ReviewVenue;
+  template: string;
+  readiness_score: number;
+  decision: 'ready' | 'minor_revision' | 'major_revision' | 'not_ready' | string;
+  summary: {
+    critical: number;
+    major: number;
+    minor: number;
+    low: number;
+  };
+  template_checks: SubmissionReadinessIssue[];
+  manuscript_checks: SubmissionReadinessIssue[];
+  citation_checks: SubmissionReadinessIssue[];
+  experiment_checks: SubmissionReadinessIssue[];
+  required_actions: string[];
+  optional_actions: string[];
+};
+
 type PaperFigureNode = {
   id: string;
   label: string;
@@ -1429,6 +1461,47 @@ function inferReviewVenue(mainFilePath: string): ReviewVenue {
   return 'Generic';
 }
 
+function getSubmissionTemplateRules(venue: ReviewVenue) {
+  const common = [
+    'Title, abstract, introduction, method, experiments/evaluation, related work, conclusion, references should be present or intentionally omitted with clear reason.',
+    'Claims in abstract and introduction should be supported by experiments, analysis, citations, or clear argumentation.',
+    'Figures and tables should be referenced, captioned, and placed near relevant discussion.',
+    'Citations should support nearby claims and bibliography entries should match cited keys.',
+    'The paper should discuss limitations, reproducibility details, and enough implementation/experimental setup for review.'
+  ];
+  const venueRules: Record<ReviewVenue, string[]> = {
+    ACL: [
+      'ACL-style NLP papers should clearly define task, dataset, baselines, evaluation metrics, and linguistic or model assumptions.',
+      'Check for limitations and ethical considerations when applicable.',
+      'Related work should distinguish the proposed contribution from prior NLP methods and resources.'
+    ],
+    NeurIPS: [
+      'NeurIPS-style papers should provide strong empirical evidence, ablations, reproducibility details, and limitations.',
+      'Check whether broader impact, ethics, or responsible release discussion is needed.',
+      'Claims about generality or performance should be backed by multiple baselines or analysis.'
+    ],
+    ICML: [
+      'ICML-style papers should align theory, method, experiments, and contribution claims.',
+      'Check assumptions, algorithm description, baselines, ablations, and reproducibility details.',
+      'Avoid overclaiming beyond empirical or theoretical evidence.'
+    ],
+    CVPR: [
+      'CVPR-style papers should include visual task definition, datasets, metrics, comparisons, ablations, and qualitative figures.',
+      'Check whether figures and visual examples are sufficient to understand the method and failure cases.',
+      'Method and experiment sections should make architecture/training details reproducible.'
+    ],
+    arXiv: [
+      'arXiv manuscripts should be complete enough for public reading, with clear abstract, contribution, evidence, and references.',
+      'Check whether unfinished placeholders, missing figures, and unresolved citations remain.'
+    ],
+    Generic: [
+      'Use a generic research-paper readiness rubric when the target venue cannot be inferred.',
+      'Prioritize structure completeness, evidence support, citation quality, reproducibility, and clarity.'
+    ]
+  };
+  return [...common, ...(venueRules[venue] || venueRules.Generic)];
+}
+
 function clampScore(value: unknown) {
   const num = Number(value);
   if (!Number.isFinite(num)) return 5;
@@ -1696,6 +1769,108 @@ function formatCitationVerifierMarkdown(report: CitationVerifierReport) {
     `- High risk: ${report.summary.high_risk}`,
     '',
     rows || '未发现可检查的引用论点。'
+  ].join('\n');
+}
+
+function normalizeSubmissionSeverity(value: unknown) {
+  const raw = String(value || 'minor').toLowerCase().trim();
+  if (raw === 'critical' || raw === 'major' || raw === 'minor' || raw === 'low') return raw;
+  return 'minor';
+}
+
+function normalizeSubmissionDecision(value: unknown, score: number) {
+  const raw = String(value || '').toLowerCase().trim();
+  if (raw === 'ready' || raw === 'minor_revision' || raw === 'major_revision' || raw === 'not_ready') return raw;
+  if (score >= 85) return 'ready';
+  if (score >= 70) return 'minor_revision';
+  if (score >= 50) return 'major_revision';
+  return 'not_ready';
+}
+
+function parseSubmissionIssues(value: unknown, prefix: string): SubmissionReadinessIssue[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item: any, idx: number) => ({
+      id: String(item?.id || `${prefix}_${idx + 1}`).trim(),
+      category: String(item?.category || prefix).trim(),
+      severity: normalizeSubmissionSeverity(item?.severity),
+      location: String(item?.location || '').trim(),
+      finding: String(item?.finding || item?.issue || '').trim(),
+      recommendation: String(item?.recommendation || item?.suggestion || '').trim(),
+      template_rule: String(item?.template_rule || '').trim()
+    }))
+    .filter((item: SubmissionReadinessIssue) => item.finding || item.recommendation);
+}
+
+function parseSubmissionReadinessReport(raw: string, venue: ReviewVenue): SubmissionReadinessReport | null {
+  const block = extractJsonBlock(raw);
+  const parsed = safeJsonParse<any>(block || raw);
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  const templateChecks = parseSubmissionIssues(parsed.template_checks, 'template');
+  const manuscriptChecks = parseSubmissionIssues(parsed.manuscript_checks, 'manuscript');
+  const citationChecks = parseSubmissionIssues(parsed.citation_checks, 'citation');
+  const experimentChecks = parseSubmissionIssues(parsed.experiment_checks, 'experiment');
+  const allIssues = [...templateChecks, ...manuscriptChecks, ...citationChecks, ...experimentChecks];
+  const score = Math.max(0, Math.min(100, Math.round(Number(parsed.readiness_score) || 0)));
+  const count = (severity: string) => allIssues.filter((item) => item.severity === severity).length;
+
+  return {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    source: 'submission-readiness-agent',
+    venue,
+    template: String(parsed.template || venue).trim(),
+    readiness_score: score,
+    decision: normalizeSubmissionDecision(parsed.decision, score),
+    summary: {
+      critical: count('critical'),
+      major: count('major'),
+      minor: count('minor'),
+      low: count('low')
+    },
+    template_checks: templateChecks,
+    manuscript_checks: manuscriptChecks,
+    citation_checks: citationChecks,
+    experiment_checks: experimentChecks,
+    required_actions: normalizeStringArray(parsed.required_actions),
+    optional_actions: normalizeStringArray(parsed.optional_actions)
+  };
+}
+
+function formatSubmissionReadinessMarkdown(report: SubmissionReadinessReport) {
+  const issueSection = (title: string, items: SubmissionReadinessIssue[]) => {
+    if (!items.length) return `## ${title}\n未发现明显问题。`;
+    const rows = items.map((item, idx) =>
+      [
+        `### ${idx + 1}. ${item.category || 'Check'} · ${item.severity}`,
+        item.location ? `- Location: ${item.location}` : '',
+        item.template_rule ? `- Template rule: ${item.template_rule}` : '',
+        item.finding ? `- Finding: ${item.finding}` : '',
+        item.recommendation ? `- Recommendation: ${item.recommendation}` : ''
+      ].filter(Boolean).join('\n')
+    ).join('\n\n');
+    return `## ${title}\n${rows}`;
+  };
+
+  return [
+    '# 投稿准备度检查 Submission Readiness',
+    `- Target template: ${report.template || report.venue}`,
+    `- Readiness score: ${report.readiness_score}/100`,
+    `- Decision: ${report.decision}`,
+    `- Issues: critical=${report.summary.critical}, major=${report.summary.major}, minor=${report.summary.minor}, low=${report.summary.low}`,
+    '',
+    report.required_actions.length ? '## 必须修改\n' + report.required_actions.map((x) => `- ${x}`).join('\n') : '## 必须修改\n暂无必须修改项。',
+    '',
+    report.optional_actions.length ? '## 建议优化\n' + report.optional_actions.map((x) => `- ${x}`).join('\n') : '## 建议优化\n暂无建议优化项。',
+    '',
+    issueSection('模板合规检查', report.template_checks),
+    '',
+    issueSection('论文内容完整性', report.manuscript_checks),
+    '',
+    issueSection('引用与证据检查', report.citation_checks),
+    '',
+    issueSection('实验与复现检查', report.experiment_checks)
   ].join('\n');
 }
 
@@ -4245,6 +4420,170 @@ export default function EditorPage() {
     reviewReportBusy,
     resolveProjectPath,
     ensureFileContent,
+    projectId,
+    activePath,
+    compileLog,
+    llmConfig,
+    writeFileCompat,
+    refreshTree,
+    t
+  ]);
+
+  const runSubmissionReadiness = useCallback(async () => {
+    if (reviewReportBusy) return;
+
+    setReviewReportBusy(true);
+    setRightView('review');
+    setReviewNotes((prev) => [{ title: t('投稿准备检查'), content: t('生成中...') }, ...prev]);
+
+    try {
+      const evidencePath = resolveProjectPath('refs/evidence/lit_matrix.json', 'refs\\evidence\\lit_matrix.json');
+      const ledgerPath = resolveProjectPath('refs/evidence/claim_ledger.json', 'refs\\evidence\\claim_ledger.json');
+      const verifierPath = resolveProjectPath('refs/evidence/citation_verifier.json', 'refs\\evidence\\citation_verifier.json');
+      const styleGuidePath = resolveProjectPath('refs/styleguide.json', 'refs\\styleguide.json');
+      let evidencePreview = '';
+      let ledgerPreview = '';
+      let verifierPreview = '';
+      let styleGuidePreview = '';
+
+      try {
+        evidencePreview = evidencePath ? await ensureFileContent(evidencePath) : '';
+      } catch {
+        evidencePreview = '';
+      }
+      try {
+        ledgerPreview = ledgerPath ? await ensureFileContent(ledgerPath) : '';
+      } catch {
+        ledgerPreview = '';
+      }
+      try {
+        verifierPreview = verifierPath ? await ensureFileContent(verifierPath) : '';
+      } catch {
+        verifierPreview = '';
+      }
+      try {
+        styleGuidePreview = styleGuidePath ? await ensureFileContent(styleGuidePath) : '';
+      } catch {
+        styleGuidePreview = '';
+      }
+
+      const templateRules = getSubmissionTemplateRules(reviewVenue);
+      const res = await runAgent({
+        task: 'submission_readiness',
+        prompt: [
+          'Read all .tex and .bib files in the project using list_files and read_file tools.',
+          'Act as a submission readiness checker for the target venue/template.',
+          `Target venue/template: ${reviewVenue}.`,
+          'Check compliance with the target template, manuscript completeness, citation/evidence quality, experiment/reproducibility readiness, and unresolved compile/log risks.',
+          'Do not rewrite the paper. Do not invent missing results. Produce a structured checklist and actionable recommendations.',
+          'Use these template rules:',
+          templateRules.map((rule, idx) => `${idx + 1}. ${rule}`).join('\n'),
+          'Return JSON only using this schema:',
+          JSON.stringify(
+            {
+              template: reviewVenue,
+              readiness_score: 0,
+              decision: 'ready | minor_revision | major_revision | not_ready',
+              template_checks: [
+                {
+                  id: 'template_1',
+                  category: 'structure | format | required section | figure/table | references',
+                  severity: 'critical | major | minor | low',
+                  location: 'file and section',
+                  template_rule: 'which venue/template rule is involved',
+                  finding: '...',
+                  recommendation: '...'
+                }
+              ],
+              manuscript_checks: [
+                {
+                  id: 'manuscript_1',
+                  category: 'abstract | introduction | method | related work | conclusion | limitation',
+                  severity: 'critical | major | minor | low',
+                  location: 'file and section',
+                  finding: '...',
+                  recommendation: '...'
+                }
+              ],
+              citation_checks: [
+                {
+                  id: 'citation_1',
+                  category: 'missing citation | weak support | bibliography | evidence',
+                  severity: 'critical | major | minor | low',
+                  location: 'file and section',
+                  finding: '...',
+                  recommendation: '...'
+                }
+              ],
+              experiment_checks: [
+                {
+                  id: 'experiment_1',
+                  category: 'baseline | ablation | dataset | metric | reproducibility | analysis',
+                  severity: 'critical | major | minor | low',
+                  location: 'file and section',
+                  finding: '...',
+                  recommendation: '...'
+                }
+              ],
+              required_actions: ['...'],
+              optional_actions: ['...']
+            },
+            null,
+            2
+          ),
+          styleGuidePreview ? `Current styleguide preview:\n${styleGuidePreview.slice(0, 3500)}` : '',
+          ledgerPreview ? `Current claim ledger preview:\n${ledgerPreview.slice(0, 4500)}` : '',
+          verifierPreview ? `Current citation verifier preview:\n${verifierPreview.slice(0, 4500)}` : '',
+          evidencePreview ? `Current literature evidence matrix preview:\n${evidencePreview.slice(0, 4500)}` : '',
+          compileLog ? `Current compile log preview:\n${compileLog.slice(-4000)}` : ''
+        ].filter(Boolean).join('\n\n'),
+        selection: '',
+        content: '',
+        mode: 'tools',
+        projectId,
+        activePath,
+        compileLog,
+        llmConfig,
+        interaction: 'agent',
+        history: []
+      });
+
+      const parsed = parseSubmissionReadinessReport(res.reply || '', reviewVenue);
+      if (!parsed) {
+        setReviewNotes((prev) => [{ title: t('投稿准备检查'), content: t('生成失败：未解析到有效 JSON。') }, ...prev.filter((item) => item.content !== t('生成中...'))]);
+        return;
+      }
+
+      const readinessPath = resolveProjectPath('refs/review/submission_readiness.json', 'refs\\review\\submission_readiness.json');
+      const readinessContent = JSON.stringify(parsed, null, 2);
+      await writeFileCompat(readinessPath, readinessContent);
+      setFiles((prev) => ({ ...prev, [readinessPath]: readinessContent }));
+      await refreshTree();
+
+      const markdown = formatSubmissionReadinessMarkdown(parsed);
+      setReviewReport(markdown);
+      setReviewNotes((prev) => [
+        { title: t('投稿准备检查'), content: markdown },
+        { title: t('投稿准备检查(JSON)'), content: '```json\n' + readinessContent + '\n```' },
+        ...prev.filter((item) => item.content !== t('生成中...'))
+      ]);
+      setStatus(
+        t('投稿准备检查完成 · {{score}}/100 · {{decision}}', {
+          score: parsed.readiness_score,
+          decision: parsed.decision
+        })
+      );
+    } catch (err) {
+      setReviewNotes((prev) => [{ title: t('投稿准备检查'), content: t('生成失败: {{error}}', { error: String(err) }) }, ...prev.filter((item) => item.content !== t('生成中...'))]);
+      setReviewReport(t('生成失败: {{error}}', { error: String(err) }));
+    } finally {
+      setReviewReportBusy(false);
+    }
+  }, [
+    reviewReportBusy,
+    resolveProjectPath,
+    ensureFileContent,
+    reviewVenue,
     projectId,
     activePath,
     compileLog,
@@ -7317,6 +7656,15 @@ Be thorough. Read ALL .tex files before reporting. Group findings by category. I
                         <span className="review-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
                         <span className="review-btn-label">{t('引用支撑检查')}</span>
                         <span className="review-btn-desc">{t('判断 citation 是否支撑 claim')}</span>
+                      </button>
+                      <button
+                        className="review-btn"
+                        onClick={runSubmissionReadiness}
+                        disabled={reviewReportBusy}
+                      >
+                        <span className="review-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M5 21h14"/><path d="M7 4h8l2 2v9a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg></span>
+                        <span className="review-btn-label">{t('投稿准备检查')}</span>
+                        <span className="review-btn-desc">{t('按目标模板评估提交风险')}</span>
                       </button>
                       <button
                         className="review-btn"
