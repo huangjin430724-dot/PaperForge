@@ -387,6 +387,8 @@ const SETTINGS_KEY = 'PaperForge-settings-v1';
 const LEGACY_SETTINGS_KEY = 'openprism-settings-v1';
 const HISTORICAL_LLM_ENDPOINT = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
 const HISTORICAL_LLM_MODEL = 'deepseek-v3-2-251201';
+const OLD_OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+const OLD_OPENAI_MODEL = 'gpt-4o-mini';
 const DEFAULT_SETTINGS: AppSettings = {
   llmEndpoint: HISTORICAL_LLM_ENDPOINT,
   llmApiKey: '',
@@ -417,9 +419,18 @@ function normalizeSettings(parsed: Partial<AppSettings> | null): AppSettings | n
     parsed.llmThinkingMode === 'on' || parsed.llmThinkingMode === 'off' || parsed.llmThinkingMode === 'auto'
       ? parsed.llmThinkingMode
       : parsed.llmThinkingEnabled === true ? 'on' : DEFAULT_SETTINGS.llmThinkingMode;
+  const endpoint = (parsed.llmEndpoint ?? '').trim();
+  const model = (parsed.llmModel ?? '').trim();
+  const apiKey = parsed.llmApiKey ?? '';
+  const looksLikeOldDefault =
+    (!endpoint || endpoint === OLD_OPENAI_ENDPOINT) &&
+    (!model || model === OLD_OPENAI_MODEL);
   return {
     ...DEFAULT_SETTINGS,
     ...parsed,
+    llmEndpoint: looksLikeOldDefault ? DEFAULT_SETTINGS.llmEndpoint : (endpoint || DEFAULT_SETTINGS.llmEndpoint),
+    llmApiKey: apiKey,
+    llmModel: looksLikeOldDefault ? DEFAULT_SETTINGS.llmModel : (model || DEFAULT_SETTINGS.llmModel),
     llmThinkingMode: parsedThinkingMode,
     llmThinkingEnabled: parsedThinkingMode === 'on',
     compileEngine

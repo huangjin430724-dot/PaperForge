@@ -23,6 +23,11 @@ type ViewFilter = 'all' | 'mine' | 'archived' | 'trash';
 type SortBy = 'updatedAt' | 'name' | 'createdAt';
 
 const SETTINGS_KEY = 'PaperForge-settings-v1';
+const LEGACY_SETTINGS_KEY = 'openprism-settings-v1';
+const HISTORICAL_LLM_ENDPOINT = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+const HISTORICAL_LLM_MODEL = 'deepseek-v3-2-251201';
+const OLD_OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+const OLD_OPENAI_MODEL = 'gpt-4o-mini';
 
 interface LLMSettings {
   llmEndpoint: string;
@@ -33,27 +38,60 @@ interface LLMSettings {
 }
 
 const DEFAULT_LLM: LLMSettings = {
-  llmEndpoint: 'https://api.openai.com/v1/chat/completions',
+  llmEndpoint: HISTORICAL_LLM_ENDPOINT,
   llmApiKey: '',
-  llmModel: 'gpt-4o-mini',
+  llmModel: HISTORICAL_LLM_MODEL,
   llmThinkingEnabled: false,
   llmThinkingMode: 'auto',
 };
 
+function normalizeLLMSettings(parsed: Partial<LLMSettings> | null): LLMSettings | null {
+  if (!parsed) return null;
+  const thinkingMode = parsed.llmThinkingMode === 'on' || parsed.llmThinkingMode === 'off' || parsed.llmThinkingMode === 'auto'
+    ? parsed.llmThinkingMode
+    : parsed.llmThinkingEnabled === true ? 'on' : DEFAULT_LLM.llmThinkingMode;
+  const endpoint = (parsed.llmEndpoint ?? '').trim();
+  const model = (parsed.llmModel ?? '').trim();
+  const apiKey = parsed.llmApiKey ?? '';
+  const looksLikeOldDefault =
+    (!endpoint || endpoint === OLD_OPENAI_ENDPOINT) &&
+    (!model || model === OLD_OPENAI_MODEL);
+
+  return {
+    llmEndpoint: looksLikeOldDefault ? DEFAULT_LLM.llmEndpoint : (endpoint || DEFAULT_LLM.llmEndpoint),
+    llmApiKey: apiKey,
+    llmModel: looksLikeOldDefault ? DEFAULT_LLM.llmModel : (model || DEFAULT_LLM.llmModel),
+    llmThinkingEnabled: thinkingMode === 'on',
+    llmThinkingMode: thinkingMode,
+  };
+}
+
+function parseStoredLLMSettings(raw: string | null) {
+  if (!raw) return null;
+  try {
+    return normalizeLLMSettings(JSON.parse(raw) as Partial<LLMSettings>);
+  } catch {
+    return null;
+  }
+}
+
+function llmSettingsScore(settings: LLMSettings | null) {
+  if (!settings) return -1;
+  let score = 0;
+  if (settings.llmApiKey) score += 100;
+  if (settings.llmEndpoint && settings.llmEndpoint !== DEFAULT_LLM.llmEndpoint) score += 20;
+  if (settings.llmModel && settings.llmModel !== DEFAULT_LLM.llmModel) score += 20;
+  return score;
+}
+
 function loadLLMSettings(): LLMSettings {
   try {
-    const raw = window.localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return DEFAULT_LLM;
-    const parsed = JSON.parse(raw);
-    return {
-      llmEndpoint: parsed.llmEndpoint ?? DEFAULT_LLM.llmEndpoint,
-      llmApiKey: parsed.llmApiKey ?? DEFAULT_LLM.llmApiKey,
-      llmModel: parsed.llmModel ?? DEFAULT_LLM.llmModel,
-      llmThinkingEnabled: parsed.llmThinkingEnabled === true,
-      llmThinkingMode: parsed.llmThinkingMode === 'on' || parsed.llmThinkingMode === 'off'
-        ? parsed.llmThinkingMode
-        : parsed.llmThinkingEnabled === true ? 'on' : 'auto',
-    };
+    const current = parseStoredLLMSettings(window.localStorage.getItem(SETTINGS_KEY));
+    const legacy = parseStoredLLMSettings(window.localStorage.getItem(LEGACY_SETTINGS_KEY));
+    const selected = llmSettingsScore(legacy) > llmSettingsScore(current) ? legacy : current;
+    if (!selected) return DEFAULT_LLM;
+    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(selected));
+    return selected;
   } catch {
     return DEFAULT_LLM;
   }
