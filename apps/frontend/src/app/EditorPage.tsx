@@ -166,6 +166,16 @@ type StructuredPeerReview = {
   confidence: number;
 };
 
+type AreaChairDecision = {
+  decision: string;
+  confidence: number;
+  meta_review: string;
+  main_reasons: string[];
+  reviewer_disagreements: string[];
+  required_revisions: string[];
+  rebuttal_suggestions: string[];
+};
+
 type ReviewVenue = 'ACL' | 'NeurIPS' | 'ICML' | 'CVPR' | 'arXiv' | 'Generic';
 
 type VenueRubric = {
@@ -272,6 +282,26 @@ type CitationVerifierReport = {
     high_risk: number;
   };
   items: CitationVerifierItem[];
+};
+
+type PaperFigureNode = {
+  id: string;
+  label: string;
+  type?: 'input' | 'process' | 'output' | 'storage' | string;
+};
+
+type PaperFigureEdge = {
+  from: string;
+  to: string;
+  label?: string;
+};
+
+type PaperFigureSpec = {
+  title?: string;
+  caption?: string;
+  label?: string;
+  nodes: PaperFigureNode[];
+  edges: PaperFigureEdge[];
 };
 
 interface PendingChange {
@@ -1457,6 +1487,21 @@ function parseStructuredPeerReview(raw: string, fallbackId: string, fallbackFocu
   };
 }
 
+function parseAreaChairDecision(raw: string): AreaChairDecision | null {
+  const block = extractJsonBlock(raw);
+  const parsed = safeJsonParse<any>(block || raw);
+  if (!parsed || typeof parsed !== 'object') return null;
+  return {
+    decision: String(parsed.decision || '').trim() || 'Borderline',
+    confidence: clampConfidence(parsed.confidence),
+    meta_review: String(parsed.meta_review || '').trim(),
+    main_reasons: normalizeStringArray(parsed.main_reasons),
+    reviewer_disagreements: normalizeStringArray(parsed.reviewer_disagreements),
+    required_revisions: normalizeStringArray(parsed.required_revisions),
+    rebuttal_suggestions: normalizeStringArray(parsed.rebuttal_suggestions)
+  };
+}
+
 function parseStructuredConsistencyReport(raw: string): StructuredConsistencyReport | null {
   const block = extractJsonBlock(raw);
   const parsed = safeJsonParse<any>(block || raw);
@@ -1654,6 +1699,134 @@ function formatCitationVerifierMarkdown(report: CitationVerifierReport) {
   ].join('\n');
 }
 
+function escapeXml(value: string) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null): PaperFigureSpec {
+  const nodes = Array.isArray(raw?.nodes)
+    ? raw.nodes
+        .map((node, idx) => ({
+          id: String(node?.id || `n${idx + 1}`).replace(/[^a-zA-Z0-9_-]+/g, '_'),
+          label: String(node?.label || `Step ${idx + 1}`).trim(),
+          type: String(node?.type || 'process').trim()
+        }))
+        .filter((node) => node.label)
+        .slice(0, 8)
+    : [];
+
+  const fallbackNodes = nodes.length >= 2 ? nodes : [
+    { id: 'input', label: 'Manuscript Input', type: 'input' },
+    { id: 'analysis', label: 'AI Analysis', type: 'process' },
+    { id: 'output', label: 'LaTeX Output', type: 'output' }
+  ];
+  const nodeIds = new Set(fallbackNodes.map((node) => node.id));
+  const edges = Array.isArray(raw?.edges)
+    ? raw.edges
+        .map((edge) => ({
+          from: String(edge?.from || '').replace(/[^a-zA-Z0-9_-]+/g, '_'),
+          to: String(edge?.to || '').replace(/[^a-zA-Z0-9_-]+/g, '_'),
+          label: String(edge?.label || '').trim()
+        }))
+        .filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to))
+        .slice(0, 10)
+    : [];
+  const fallbackEdges = edges.length > 0
+    ? edges
+    : fallbackNodes.slice(0, -1).map((node, idx) => ({ from: node.id, to: fallbackNodes[idx + 1].id }));
+
+  return {
+    title: String(raw?.title || 'Method Pipeline').trim(),
+    caption: String(raw?.caption || 'Overview of the proposed workflow.').trim(),
+    label: String(raw?.label || 'fig:method-pipeline').replace(/[^a-zA-Z0-9:-]+/g, '-'),
+    nodes: fallbackNodes,
+    edges: fallbackEdges
+  };
+}
+
+function renderPaperFigureSvg(spec: PaperFigureSpec) {
+  const nodeWidth = 168;
+  const nodeHeight = 68;
+  const gap = 62;
+  const marginX = 42;
+  const marginY = 72;
+  const width = Math.max(720, marginX * 2 + spec.nodes.length * nodeWidth + (spec.nodes.length - 1) * gap);
+  const height = 260;
+  const y = marginY + 38;
+  const colors: Record<string, { fill: string; stroke: string }> = {
+    input: { fill: '#e8f3ff', stroke: '#5d8fc8' },
+    process: { fill: '#fff7e6', stroke: '#c58a2a' },
+    output: { fill: '#eaf7ef', stroke: '#4d9a67' },
+    storage: { fill: '#f1ecff', stroke: '#7c67b8' }
+  };
+
+  const positions = new Map<string, { x: number; y: number }>();
+  spec.nodes.forEach((node, idx) => {
+    positions.set(node.id, { x: marginX + idx * (nodeWidth + gap), y });
+  });
+
+  const wrapLabel = (label: string) => {
+    const words = label.split(/\s+/).filter(Boolean);
+    const lines: string[] = [];
+    let current = '';
+    for (const word of words) {
+      const next = current ? `${current} ${word}` : word;
+      if (next.length > 22 && current) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = next;
+      }
+    }
+    if (current) lines.push(current);
+    return lines.slice(0, 3);
+  };
+
+  const edges = spec.edges.map((edge, idx) => {
+    const from = positions.get(edge.from);
+    const to = positions.get(edge.to);
+    if (!from || !to) return '';
+    const x1 = from.x + nodeWidth;
+    const y1 = from.y + nodeHeight / 2;
+    const x2 = to.x;
+    const y2 = to.y + nodeHeight / 2;
+    const label = edge.label
+      ? `<text x="${(x1 + x2) / 2}" y="${y1 - 10}" text-anchor="middle" font-size="11" fill="#6f6258">${escapeXml(edge.label)}</text>`
+      : '';
+    return `<path d="M ${x1} ${y1} C ${x1 + 24} ${y1}, ${x2 - 24} ${y2}, ${x2} ${y2}" fill="none" stroke="#8b8178" stroke-width="2" marker-end="url(#arrow-${idx})"/><marker id="arrow-${idx}" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#8b8178"/></marker>${label}`;
+  }).join('\n');
+
+  const nodes = spec.nodes.map((node) => {
+    const pos = positions.get(node.id)!;
+    const color = colors[node.type || 'process'] || colors.process;
+    const lines = wrapLabel(node.label);
+    const text = lines.map((line, idx) =>
+      `<tspan x="${pos.x + nodeWidth / 2}" dy="${idx === 0 ? 0 : 16}">${escapeXml(line)}</tspan>`
+    ).join('');
+    return [
+      `<rect x="${pos.x}" y="${pos.y}" width="${nodeWidth}" height="${nodeHeight}" rx="10" fill="${color.fill}" stroke="${color.stroke}" stroke-width="2"/>`,
+      `<text x="${pos.x + nodeWidth / 2}" y="${pos.y + 30}" text-anchor="middle" font-size="13" font-family="Inter, Arial, sans-serif" fill="#2d2926">${text}</text>`
+    ].join('\n');
+  }).join('\n');
+
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+    '<rect width="100%" height="100%" fill="#fffdf8"/>',
+    `<text x="${width / 2}" y="36" text-anchor="middle" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="700" fill="#24211f">${escapeXml(spec.title || 'Method Pipeline')}</text>`,
+    '<defs>',
+    edges.match(/<marker[\s\S]*?<\/marker>/g)?.join('\n') || '',
+    '</defs>',
+    edges.replace(/<marker[\s\S]*?<\/marker>/g, ''),
+    nodes,
+    '</svg>'
+  ].join('\n');
+}
+
 function average(values: number[]) {
   if (!values.length) return 0;
   return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100;
@@ -1745,7 +1918,8 @@ function formatAggregatedReviewMarkdown(
   reviews: StructuredPeerReview[],
   venue: ReviewVenue,
   consistency: StructuredConsistencyReport | null,
-  citations: StructuredCitationReport | null
+  citations: StructuredCitationReport | null,
+  areaChair?: AreaChairDecision | null
 ) {
   const scoreLines = [
     `- 创新性 (Novelty): ${aggregate.scores.novelty}/10`,
@@ -1794,8 +1968,20 @@ function formatAggregatedReviewMarkdown(
   return [
     '# 综合评审报告',
     `**Venue:** ${venue}`,
-    `**Consensus verdict:** ${aggregate.verdict}`,
-    `**Aggregate confidence:** ${aggregate.confidence}`,
+    `**Consensus verdict:** ${areaChair?.decision || aggregate.verdict}`,
+    `**Aggregate confidence:** ${areaChair?.confidence ?? aggregate.confidence}`,
+    areaChair
+      ? [
+          '',
+          '## Area Chair Meta-Review',
+          areaChair.meta_review || 'No meta-review generated.',
+          '',
+          areaChair.main_reasons.length ? '### Main Reasons\n' + areaChair.main_reasons.map((x) => `- ${x}`).join('\n') : '',
+          areaChair.reviewer_disagreements.length ? '### Reviewer Disagreements\n' + areaChair.reviewer_disagreements.map((x) => `- ${x}`).join('\n') : '',
+          areaChair.required_revisions.length ? '### Required Revisions\n' + areaChair.required_revisions.map((x) => `- ${x}`).join('\n') : '',
+          areaChair.rebuttal_suggestions.length ? '### Rebuttal Suggestions\n' + areaChair.rebuttal_suggestions.map((x) => `- ${x}`).join('\n') : ''
+        ].filter(Boolean).join('\n')
+      : '',
     '',
     '## 评分汇总（调整后）',
     scoreLines,
@@ -2810,13 +2996,62 @@ export default function EditorPage() {
 
       const aggregateBase = aggregateReviews(parsed);
       const aggregate = applyReviewEvidenceAdjustments(aggregateBase, consistency, missingCitations);
-      const markdown = formatAggregatedReviewMarkdown(aggregate, parsed, reviewVenue, consistency, missingCitations);
+      let areaChair: AreaChairDecision | null = null;
+      try {
+        const acRes = await callLLM({
+          llmConfig,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are an Area Chair for an academic conference. ' +
+                'Given structured reviewer reports and auxiliary risk checks, write a concise meta-review and final decision. ' +
+                'Focus on reviewer disagreement, decisive weaknesses, required revisions, and rebuttal advice. ' +
+                'Return JSON only.'
+            },
+            {
+              role: 'user',
+              content: JSON.stringify({
+                venue: reviewVenue,
+                aggregate,
+                consistency,
+                missingCitations,
+                reviews: parsed,
+                outputSchema: {
+                  decision: 'Accept | Weak Accept | Borderline | Weak Reject | Reject',
+                  confidence: 0.5,
+                  meta_review: '...',
+                  main_reasons: ['...'],
+                  reviewer_disagreements: ['...'],
+                  required_revisions: ['...'],
+                  rebuttal_suggestions: ['...']
+                }
+              })
+            }
+          ]
+        });
+        areaChair = acRes.ok && acRes.content ? parseAreaChairDecision(acRes.content) : null;
+      } catch {
+        areaChair = null;
+      }
+      const markdown = formatAggregatedReviewMarkdown(aggregate, parsed, reviewVenue, consistency, missingCitations, areaChair);
+      if (areaChair) {
+        const acContent = JSON.stringify({
+          version: 1,
+          generatedAt: new Date().toISOString(),
+          venue: reviewVenue,
+          aggregate,
+          areaChair
+        }, null, 2);
+        await writeFile(projectId, 'refs/review/area_chair_decision.json', acContent);
+        setFiles((prev) => ({ ...prev, 'refs/review/area_chair_decision.json': acContent }));
+      }
 
       setReviewReport(markdown);
       setReviewNotes((prev) => [
         {
           title: t('评审聚合(JSON)'),
-          content: '```json\n' + JSON.stringify({ venue: reviewVenue, rubric: activeRubric, aggregate, consistency, missingCitations, reviews: parsed }, null, 2) + '\n```'
+          content: '```json\n' + JSON.stringify({ venue: reviewVenue, rubric: activeRubric, aggregate, areaChair, consistency, missingCitations, reviews: parsed }, null, 2) + '\n```'
         },
         ...prev
       ]);
@@ -4295,6 +4530,86 @@ export default function EditorPage() {
       await refreshTree();
       if (plotAutoInsert) {
         insertFigureSnippet(res.assetPath);
+      }
+    } catch (err) {
+      setPlotStatus(t('生成失败: {{error}}', { error: String(err) }));
+    } finally {
+      setPlotBusy(false);
+    }
+  };
+
+  const handlePaperFigureGenerate = async () => {
+    if (!projectId) return;
+    setPlotBusy(true);
+    setPlotStatus('');
+    try {
+      const sourcePath = mainFile || activePath;
+      const sourceContent = selectionText || (sourcePath ? await ensureFileContent(sourcePath) : '');
+      const projectContext = await buildProjectContext();
+      const res = await callLLM({
+        llmConfig,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You design publication-ready method pipeline figures for academic papers. ' +
+              'Given manuscript context, extract the key system modules or workflow steps as nodes and directed edges. ' +
+              'Return JSON only. Keep labels short and technical. Do not include SVG or Markdown.'
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              activeFile: sourcePath,
+              selectedText: selectionText ? sourceContent.slice(0, 5000) : '',
+              projectContext,
+              sourcePreview: sourceContent.slice(0, 7000),
+              userHint: plotPrompt.trim(),
+              outputSchema: {
+                title: 'Method Pipeline',
+                caption: 'Overview of the proposed workflow.',
+                label: 'fig:method-pipeline',
+                nodes: [
+                  { id: 'input', label: 'Input', type: 'input' },
+                  { id: 'module', label: 'Core Module', type: 'process' },
+                  { id: 'output', label: 'Output', type: 'output' }
+                ],
+                edges: [
+                  { from: 'input', to: 'module', label: '' },
+                  { from: 'module', to: 'output', label: '' }
+                ]
+              }
+            })
+          }
+        ]
+      });
+      if (!res.ok || !res.content) {
+        throw new Error(res.error || t('图示生成失败'));
+      }
+      const parsed = safeJsonParse<Partial<PaperFigureSpec>>(extractJsonBlock(res.content) || res.content);
+      const spec = normalizeFigureSpec(parsed);
+      const svg = renderPaperFigureSvg(spec);
+      const baseName = (plotFilename.trim() || `paper_figure_${Date.now().toString(36)}.svg`)
+        .replace(/\\/g, '/')
+        .split('/')
+        .pop() || `paper_figure_${Date.now().toString(36)}.svg`;
+      const safeName = baseName.toLowerCase().endsWith('.svg') ? baseName : `${baseName}.svg`;
+      const assetPath = `figures/${safeName.replace(/[^a-zA-Z0-9_.-]+/g, '-')}`;
+      await writeFileCompat(assetPath, svg);
+      setFiles((prev) => ({ ...prev, [assetPath]: svg }));
+      setPlotAssetPath(assetPath);
+      setPlotStatus(t('论文图示已生成'));
+      await refreshTree();
+      if (plotAutoInsert) {
+        const figureSnippet = [
+          '\\begin{figure}[t]',
+          '\\centering',
+          `\\includegraphics[width=0.95\\linewidth]{${assetPath}}`,
+          `\\caption{${spec.caption || 'Overview of the proposed workflow.'}}`,
+          `\\label{${spec.label || 'fig:method-pipeline'}}`,
+          '\\end{figure}',
+          ''
+        ].join('\n');
+        insertAtCursor(figureSnippet, { block: true });
       }
     } catch (err) {
       setPlotStatus(t('生成失败: {{error}}', { error: String(err) }));
@@ -6840,7 +7155,11 @@ ${prompt}` : ''
                       <button className="btn" onClick={handlePlotGenerate} disabled={plotBusy}>
                         {plotBusy ? t('生成中...') : t('生成图表')}
                       </button>
+                      <button className="btn ghost" onClick={handlePaperFigureGenerate} disabled={plotBusy}>
+                        {t('论文图示 Agent')}
+                      </button>
                     </div>
+                    <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，自动生成方法流程 SVG。补充提示可用于指定模块或风格。')}</div>
                     {plotStatus && <div className="muted">{plotStatus}</div>}
                     {plotAssetPath && (
                       <div className="vision-result">
