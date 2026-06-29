@@ -328,10 +328,21 @@ type PaperFigureEdge = {
   label?: string;
 };
 
+type PaperFigureSkill =
+  | 'method_pipeline'
+  | 'model_architecture'
+  | 'experiment_workflow'
+  | 'result_analysis'
+  | 'timeline'
+  | 'system_overview';
+
 type PaperFigureSpec = {
   title?: string;
   caption?: string;
   label?: string;
+  skill?: PaperFigureSkill | string;
+  design_notes?: string[];
+  mermaid?: string;
   nodes: PaperFigureNode[];
   edges: PaperFigureEdge[];
 };
@@ -406,6 +417,64 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 const COLLAB_NAME_KEY = 'openprism-collab-name';
 const COLLAB_COLORS = ['#b44a2f', '#2f6fb4', '#2f9b74', '#b48a2f', '#6b2fb4', '#b42f6d', '#2f8fb4'];
+
+const SCIENTIFIC_FIGURE_SKILLS: Record<PaperFigureSkill, {
+  label: string;
+  description: string;
+  prompt: string;
+  defaultTitle: string;
+  defaultCaption: string;
+  defaultLabel: string;
+}> = {
+  method_pipeline: {
+    label: '方法流程图',
+    description: '适合论文 method overview，展示输入、模块与输出。',
+    prompt: 'Create a concise method pipeline figure. Emphasize ordered processing steps, data flow, and module responsibilities.',
+    defaultTitle: 'Method Pipeline',
+    defaultCaption: 'Overview of the proposed method pipeline.',
+    defaultLabel: 'fig:method-pipeline'
+  },
+  model_architecture: {
+    label: '模型结构图',
+    description: '适合神经网络、模块结构、编码器/解码器等。',
+    prompt: 'Create a model architecture figure. Emphasize layers, submodules, representations, and forward computation.',
+    defaultTitle: 'Model Architecture',
+    defaultCaption: 'Architecture of the proposed model.',
+    defaultLabel: 'fig:model-architecture'
+  },
+  experiment_workflow: {
+    label: '实验流程图',
+    description: '适合数据集、实验设置、评测指标和对比流程。',
+    prompt: 'Create an experiment workflow figure. Emphasize datasets, preprocessing, baselines, metrics, and evaluation stages.',
+    defaultTitle: 'Experiment Workflow',
+    defaultCaption: 'Experimental workflow and evaluation protocol.',
+    defaultLabel: 'fig:experiment-workflow'
+  },
+  result_analysis: {
+    label: '结果分析图',
+    description: '适合消融、误差分析、指标对比和发现总结。',
+    prompt: 'Create a result analysis figure. Emphasize findings, comparisons, ablation factors, and interpretation links.',
+    defaultTitle: 'Result Analysis',
+    defaultCaption: 'Summary of key result analysis findings.',
+    defaultLabel: 'fig:result-analysis'
+  },
+  timeline: {
+    label: '研究时间线',
+    description: '适合系统流程、研究进展、项目阶段和方法演化。',
+    prompt: 'Create a research timeline figure. Emphasize phases, milestones, dependencies, and deliverables.',
+    defaultTitle: 'Research Timeline',
+    defaultCaption: 'Timeline of the research workflow.',
+    defaultLabel: 'fig:research-timeline'
+  },
+  system_overview: {
+    label: '系统总览图',
+    description: '适合工具平台、Agent 架构和端到端系统设计。',
+    prompt: 'Create a system overview figure. Emphasize agents, services, data stores, user actions, and generated artifacts.',
+    defaultTitle: 'System Overview',
+    defaultCaption: 'Overview of the system architecture.',
+    defaultLabel: 'fig:system-overview'
+  }
+};
 
 function normalizeSettings(parsed: Partial<AppSettings> | null): AppSettings | null {
   if (!parsed) return null;
@@ -1894,7 +1963,16 @@ function escapeXml(value: string) {
     .replace(/'/g, '&apos;');
 }
 
-function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null): PaperFigureSpec {
+function normalizePaperFigureSkill(value: unknown): PaperFigureSkill {
+  const raw = String(value || '').trim();
+  return Object.keys(SCIENTIFIC_FIGURE_SKILLS).includes(raw)
+    ? raw as PaperFigureSkill
+    : 'method_pipeline';
+}
+
+function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null, fallbackSkill: PaperFigureSkill = 'method_pipeline'): PaperFigureSpec {
+  const skill = normalizePaperFigureSkill(raw?.skill || fallbackSkill);
+  const preset = SCIENTIFIC_FIGURE_SKILLS[skill];
   const nodes = Array.isArray(raw?.nodes)
     ? raw.nodes
         .map((node, idx) => ({
@@ -1927,9 +2005,12 @@ function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null): PaperFigureS
     : fallbackNodes.slice(0, -1).map((node, idx) => ({ from: node.id, to: fallbackNodes[idx + 1].id }));
 
   return {
-    title: String(raw?.title || 'Method Pipeline').trim(),
-    caption: String(raw?.caption || 'Overview of the proposed workflow.').trim(),
-    label: String(raw?.label || 'fig:method-pipeline').replace(/[^a-zA-Z0-9:-]+/g, '-'),
+    title: String(raw?.title || preset.defaultTitle).trim(),
+    caption: String(raw?.caption || preset.defaultCaption).trim(),
+    label: String(raw?.label || preset.defaultLabel).replace(/[^a-zA-Z0-9:-]+/g, '-'),
+    skill,
+    design_notes: normalizeStringArray(raw?.design_notes).slice(0, 8),
+    mermaid: String(raw?.mermaid || '').trim(),
     nodes: fallbackNodes,
     edges: fallbackEdges
   };
@@ -2867,6 +2948,7 @@ export default function EditorPage() {
   const [plotFilename, setPlotFilename] = useState('');
   const [plotPrompt, setPlotPrompt] = useState('');
   const [plotRetries, setPlotRetries] = useState(2);
+  const [paperFigureSkill, setPaperFigureSkill] = useState<PaperFigureSkill>('method_pipeline');
   const [plotBusy, setPlotBusy] = useState(false);
   const [plotStatus, setPlotStatus] = useState('');
   const [plotAssetPath, setPlotAssetPath] = useState('');
@@ -4893,6 +4975,7 @@ export default function EditorPage() {
     setPlotBusy(true);
     setPlotStatus('');
     try {
+      const figureSkillPreset = SCIENTIFIC_FIGURE_SKILLS[paperFigureSkill];
       const sourcePath = mainFile || activePath;
       const sourceContent = selectionText || (sourcePath ? await ensureFileContent(sourcePath) : '');
       const projectContext = await buildProjectContext();
@@ -4902,22 +4985,29 @@ export default function EditorPage() {
           {
             role: 'system',
             content:
-              'You design publication-ready method pipeline figures for academic papers. ' +
-              'Given manuscript context, extract the key system modules or workflow steps as nodes and directed edges. ' +
-              'Return JSON only. Keep labels short and technical. Do not include SVG or Markdown.'
+              'You design publication-ready scientific figures for academic papers. ' +
+              'Given manuscript context and a figure skill, extract key entities as nodes and directed edges. ' +
+              'Return JSON only. Keep labels short and technical. Do not include SVG or Markdown. ' +
+              'The output should be suitable for an editable SVG figure package.'
           },
           {
             role: 'user',
             content: JSON.stringify({
+              figureSkill: paperFigureSkill,
+              figureSkillLabel: figureSkillPreset.label,
+              figureSkillInstruction: figureSkillPreset.prompt,
               activeFile: sourcePath,
               selectedText: selectionText ? sourceContent.slice(0, 5000) : '',
               projectContext,
               sourcePreview: sourceContent.slice(0, 7000),
               userHint: plotPrompt.trim(),
               outputSchema: {
-                title: 'Method Pipeline',
-                caption: 'Overview of the proposed workflow.',
-                label: 'fig:method-pipeline',
+                skill: paperFigureSkill,
+                title: figureSkillPreset.defaultTitle,
+                caption: figureSkillPreset.defaultCaption,
+                label: figureSkillPreset.defaultLabel,
+                design_notes: ['why the selected figure type fits this paper'],
+                mermaid: 'optional Mermaid flowchart source, if useful',
                 nodes: [
                   { id: 'input', label: 'Input', type: 'input' },
                   { id: 'module', label: 'Core Module', type: 'process' },
@@ -4936,7 +5026,7 @@ export default function EditorPage() {
         throw new Error(res.error || t('图示生成失败'));
       }
       const parsed = safeJsonParse<Partial<PaperFigureSpec>>(extractJsonBlock(res.content) || res.content);
-      const spec = normalizeFigureSpec(parsed);
+      const spec = normalizeFigureSpec(parsed, paperFigureSkill);
       const svg = renderPaperFigureSvg(spec);
       const baseName = (plotFilename.trim() || `paper_figure_${Date.now().toString(36)}.svg`)
         .replace(/\\/g, '/')
@@ -4944,10 +5034,27 @@ export default function EditorPage() {
         .pop() || `paper_figure_${Date.now().toString(36)}.svg`;
       const safeName = baseName.toLowerCase().endsWith('.svg') ? baseName : `${baseName}.svg`;
       const assetPath = `figures/${safeName.replace(/[^a-zA-Z0-9_.-]+/g, '-')}`;
+      const packagePath = assetPath.replace(/\.svg$/i, '.figure.json');
+      const packageContent = JSON.stringify({
+        version: 1,
+        source: 'scientific-figure-skill',
+        generatedAt: new Date().toISOString(),
+        skill: spec.skill || paperFigureSkill,
+        skillLabel: figureSkillPreset.label,
+        activeFile: sourcePath,
+        assetPath,
+        latex: {
+          includegraphics: `\\includegraphics[width=0.95\\linewidth]{${assetPath}}`,
+          caption: spec.caption,
+          label: spec.label
+        },
+        spec
+      }, null, 2);
       await writeFileCompat(assetPath, svg);
-      setFiles((prev) => ({ ...prev, [assetPath]: svg }));
+      await writeFileCompat(packagePath, packageContent);
+      setFiles((prev) => ({ ...prev, [assetPath]: svg, [packagePath]: packageContent }));
       setPlotAssetPath(assetPath);
-      setPlotStatus(t('论文图示已生成'));
+      setPlotStatus(t('科研图示已生成 · {{skill}} · 已保存 SVG 和 figure package', { skill: figureSkillPreset.label }));
       await refreshTree();
       if (plotAutoInsert) {
         const figureSnippet = [
@@ -7469,8 +7576,21 @@ ${prompt}` : ''
                         className="input"
                         value={plotFilename}
                         onChange={(event) => setPlotFilename(event.target.value)}
-                        placeholder="plot.png"
+                        placeholder="figure.svg"
                       />
+                    </div>
+                    <div className="field">
+                      <label>{t('科研图示 Skill')}</label>
+                      <select
+                        className="input"
+                        value={paperFigureSkill}
+                        onChange={(event) => setPaperFigureSkill(event.target.value as PaperFigureSkill)}
+                      >
+                        {Object.entries(SCIENTIFIC_FIGURE_SKILLS).map(([value, preset]) => (
+                          <option key={value} value={value}>{t(preset.label)}</option>
+                        ))}
+                      </select>
+                      <div className="muted">{t(SCIENTIFIC_FIGURE_SKILLS[paperFigureSkill].description)}</div>
                     </div>
                     <div className="field">
                       <label>{t('补充提示 (可选)')}</label>
@@ -7509,7 +7629,7 @@ ${prompt}` : ''
                         {t('论文图示 Agent')}
                       </button>
                     </div>
-                    <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，自动生成方法流程 SVG。补充提示可用于指定模块或风格。')}</div>
+                    <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，按科研图示 Skill 生成 SVG，并同步保存 .figure.json 图示包。')}</div>
                     {plotStatus && <div className="muted">{plotStatus}</div>}
                     {plotAssetPath && (
                       <div className="vision-result">
