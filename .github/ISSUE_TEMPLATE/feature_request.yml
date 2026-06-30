@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest a new capability or workflow improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem should this solve?
+      placeholder: I want PaperForge to...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the workflow or behavior you expect.
+      placeholder: Add a button / agent / check that...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: Other approaches or tools you tried.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - AI writing
+        - LaTeX editing
+        - Compile / preview
+        - Figure Agent
+        - Search / references
+        - Review / QA
+        - Project management
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      placeholder: Screenshots, related papers, similar GitHub projects, or examples.

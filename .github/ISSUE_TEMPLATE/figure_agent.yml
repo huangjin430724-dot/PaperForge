@@ -1,0 +1,61 @@
+name: Figure Agent issue
+description: Report or request improvements for scientific figure planning, generation, QA, registry, or reports.
+title: "[Figure Agent]: "
+labels: ["figure-agent"]
+body:
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Workflow stage
+      options:
+        - Figure planning
+        - SVG generation
+        - Skill-aware layout
+        - Figure QA
+        - Figure registry
+        - Figure report export
+        - Offline demo assets
+        - Figure asset quality gate
+    validations:
+      required: true
+  - type: textarea
+    id: paper_context
+    attributes:
+      label: Paper context
+      description: What kind of paper or section were you working on?
+      placeholder: Method section for an NLP paper, experiment workflow for a CV paper, etc.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed result
+      description: What did PaperForge generate or check?
+      placeholder: Include figure title, asset path, QA score, or report snippet.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What would make the figure more useful or publication-ready?
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Related artifacts
+      description: Paste relevant paths or snippets from generated assets.
+      placeholder: |
+        figures/figure_plan.json
+        figures/example.svg
+        figures/example.figure.json
+        figures/example.figure.qa.json
+        figures/index.json
+        figures/figure_report.md
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I ran `npm run check:figures` if generated figure assets are involved.
+        - label: I included the relevant `.figure.json` or `.figure.qa.json` details.

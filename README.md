@@ -649,11 +649,15 @@ Welcome to submit Issues or PRs:
 3. Commit your changes
 4. Submit a PR
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines. Before opening a PR, run the full quality gate when possible:
+
 Development commands:
 ```bash
 npm run dev
 npm run dev:frontend
 npm run dev:backend
+npm run check
+npm run check:figures
 npm run build
 ```
 

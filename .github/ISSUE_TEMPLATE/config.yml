@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: PaperForge README
+    url: https://github.com/huangjin430724-dot/PaperForge#readme
+    about: Read setup and feature documentation before filing an issue.

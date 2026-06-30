@@ -726,11 +726,15 @@ PaperForge/
 3. 提交变更
 4. 发起 PR
 
+详细规范见 [CONTRIBUTING.md](CONTRIBUTING.md)。提交 PR 前建议运行完整质量门禁：
+
 开发命令：
 ```bash
 npm run dev
 npm run dev:frontend
 npm run dev:backend
+npm run check
+npm run check:figures
 npm run build
 ```
 
