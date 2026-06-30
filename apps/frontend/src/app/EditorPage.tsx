@@ -391,6 +391,29 @@ type PaperFigureQaReport = {
   revision_prompt: string;
 };
 
+type PaperFigureRegistryItem = {
+  assetPath: string;
+  packagePath: string;
+  qaPath?: string;
+  title: string;
+  caption: string;
+  label: string;
+  skill: PaperFigureSkill | string;
+  skillLabel: string;
+  activeFile: string;
+  generatedAt: string;
+  updatedAt: string;
+  qaScore?: number;
+  qaVerdict?: string;
+};
+
+type PaperFigureRegistry = {
+  version: number;
+  source: string;
+  updatedAt: string;
+  figures: PaperFigureRegistryItem[];
+};
+
 interface PendingChange {
   filePath: string;
   original: string;
@@ -2095,6 +2118,35 @@ function normalizePaperFigureQa(raw: any, assetPath: string, packagePath: string
     issues,
     recommended_caption: String(raw?.recommended_caption || raw?.recommendedCaption || '').trim(),
     revision_prompt: String(raw?.revision_prompt || raw?.revisionPrompt || '').trim()
+  };
+}
+
+function normalizePaperFigureRegistry(raw: any): PaperFigureRegistry {
+  const figures = Array.isArray(raw?.figures)
+    ? raw.figures
+        .map((item: any): PaperFigureRegistryItem => ({
+          assetPath: String(item?.assetPath || '').trim(),
+          packagePath: String(item?.packagePath || '').trim(),
+          qaPath: item?.qaPath ? String(item.qaPath).trim() : undefined,
+          title: String(item?.title || '').trim(),
+          caption: String(item?.caption || '').trim(),
+          label: String(item?.label || '').trim(),
+          skill: String(item?.skill || 'method_pipeline').trim(),
+          skillLabel: String(item?.skillLabel || '').trim(),
+          activeFile: String(item?.activeFile || '').trim(),
+          generatedAt: String(item?.generatedAt || '').trim(),
+          updatedAt: String(item?.updatedAt || item?.generatedAt || '').trim(),
+          qaScore: Number.isFinite(Number(item?.qaScore)) ? Number(item.qaScore) : undefined,
+          qaVerdict: item?.qaVerdict ? String(item.qaVerdict).trim() : undefined
+        }))
+        .filter((item: PaperFigureRegistryItem) => item.assetPath && item.packagePath)
+    : [];
+
+  return {
+    version: 1,
+    source: 'scientific-figure-registry',
+    updatedAt: String(raw?.updatedAt || new Date().toISOString()),
+    figures
   };
 }
 
@@ -5186,6 +5238,47 @@ export default function EditorPage() {
     }
   };
 
+  const updatePaperFigureRegistry = async (entry: PaperFigureRegistryItem) => {
+    const registryPath = 'figures/index.json';
+    let registry = normalizePaperFigureRegistry(null);
+    try {
+      const raw = await ensureFileContent(registryPath);
+      registry = normalizePaperFigureRegistry(safeJsonParse<any>(raw));
+    } catch {
+      registry = normalizePaperFigureRegistry(null);
+    }
+    const now = new Date().toISOString();
+    const existing = registry.figures.find((item) => item.assetPath === entry.assetPath);
+    const nextEntry: PaperFigureRegistryItem = {
+      assetPath: entry.assetPath || existing?.assetPath || '',
+      packagePath: entry.packagePath || existing?.packagePath || '',
+      qaPath: entry.qaPath || existing?.qaPath,
+      title: entry.title || existing?.title || '',
+      caption: entry.caption || existing?.caption || '',
+      label: entry.label || existing?.label || '',
+      skill: entry.skill || existing?.skill || 'method_pipeline',
+      skillLabel: entry.skillLabel || existing?.skillLabel || '',
+      activeFile: entry.activeFile || existing?.activeFile || '',
+      generatedAt: existing?.generatedAt || entry.generatedAt || now,
+      updatedAt: now,
+      qaScore: entry.qaScore ?? existing?.qaScore,
+      qaVerdict: entry.qaVerdict || existing?.qaVerdict
+    };
+    const figures = [
+      nextEntry,
+      ...registry.figures.filter((item) => item.assetPath !== entry.assetPath)
+    ].slice(0, 50);
+    const nextRegistry: PaperFigureRegistry = {
+      version: 1,
+      source: 'scientific-figure-registry',
+      updatedAt: now,
+      figures
+    };
+    const content = JSON.stringify(nextRegistry, null, 2);
+    await writeFileCompat(registryPath, content);
+    setFiles((prev) => ({ ...prev, [registryPath]: content }));
+  };
+
   const handlePaperFigurePlan = async () => {
     if (!projectId) return;
     setPlotBusy(true);
@@ -5354,8 +5447,20 @@ export default function EditorPage() {
       await writeFileCompat(assetPath, svg);
       await writeFileCompat(packagePath, packageContent);
       setFiles((prev) => ({ ...prev, [assetPath]: svg, [packagePath]: packageContent }));
+      await updatePaperFigureRegistry({
+        assetPath,
+        packagePath,
+        title: spec.title || figureSkillPreset.defaultTitle,
+        caption: spec.caption || figureSkillPreset.defaultCaption,
+        label: spec.label || figureSkillPreset.defaultLabel,
+        skill: spec.skill || selectedSkill,
+        skillLabel: figureSkillPreset.label,
+        activeFile: sourcePath || '',
+        generatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
       setPlotAssetPath(assetPath);
-      setPlotStatus(t('科研图示已生成 · {{skill}} · 已保存 SVG 和 figure package', { skill: figureSkillPreset.label }));
+      setPlotStatus(t('科研图示已生成 · {{skill}} · 已保存 SVG、figure package，并更新 figures/index.json', { skill: figureSkillPreset.label }));
       await refreshTree();
       if (plotAutoInsert) {
         const figureSnippet = [
@@ -5442,8 +5547,23 @@ export default function EditorPage() {
       const reportContent = JSON.stringify(report, null, 2);
       await writeFileCompat(qaPath, reportContent);
       setFiles((prev) => ({ ...prev, [qaPath]: reportContent }));
+      await updatePaperFigureRegistry({
+        assetPath: plotAssetPath,
+        packagePath,
+        qaPath,
+        title: '',
+        caption: report.recommended_caption,
+        label: '',
+        skill: 'method_pipeline',
+        skillLabel: '',
+        activeFile: sourcePath || '',
+        generatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        qaScore: report.overall_score,
+        qaVerdict: report.verdict
+      });
       setPaperFigureQa(report);
-      setPlotStatus(t('图示质量检查完成 · {{score}}/100 · {{verdict}} · 已保存 QA 报告', {
+      setPlotStatus(t('图示质量检查完成 · {{score}}/100 · {{verdict}} · 已保存 QA 报告并更新图示索引', {
         score: report.overall_score,
         verdict: report.verdict
       }));
