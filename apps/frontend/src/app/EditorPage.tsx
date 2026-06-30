@@ -347,6 +347,28 @@ type PaperFigureSpec = {
   edges: PaperFigureEdge[];
 };
 
+type PaperFigurePlanItem = {
+  id: string;
+  skill: PaperFigureSkill;
+  title: string;
+  target_section: string;
+  purpose: string;
+  why_it_matters: string;
+  caption: string;
+  label: string;
+  key_elements: string[];
+  risks: string[];
+};
+
+type PaperFigurePlan = {
+  version: number;
+  source: string;
+  generatedAt: string;
+  activeFile: string;
+  manuscriptSummary: string;
+  recommendedFigures: PaperFigurePlanItem[];
+};
+
 interface PendingChange {
   filePath: string;
   original: string;
@@ -1970,6 +1992,59 @@ function normalizePaperFigureSkill(value: unknown): PaperFigureSkill {
     : 'method_pipeline';
 }
 
+function normalizePaperFigurePlan(raw: any, activeFile: string): PaperFigurePlan {
+  const items = Array.isArray(raw?.recommendedFigures)
+    ? raw.recommendedFigures
+    : Array.isArray(raw?.figures)
+      ? raw.figures
+      : [];
+
+  const recommendedFigures = items
+    .map((item: any, idx: number): PaperFigurePlanItem => {
+      const skill = normalizePaperFigureSkill(item?.skill);
+      const preset = SCIENTIFIC_FIGURE_SKILLS[skill];
+      const title = String(item?.title || preset.defaultTitle).trim();
+      return {
+        id: String(item?.id || `fig-plan-${idx + 1}`).replace(/[^a-zA-Z0-9_-]+/g, '-'),
+        skill,
+        title,
+        target_section: String(item?.target_section || item?.targetSection || 'Method').trim(),
+        purpose: String(item?.purpose || preset.description).trim(),
+        why_it_matters: String(item?.why_it_matters || item?.whyItMatters || 'This figure makes the paper structure easier to understand.').trim(),
+        caption: String(item?.caption || preset.defaultCaption).trim(),
+        label: String(item?.label || preset.defaultLabel).replace(/[^a-zA-Z0-9:-]+/g, '-'),
+        key_elements: normalizeStringArray(item?.key_elements || item?.keyElements).slice(0, 8),
+        risks: normalizeStringArray(item?.risks).slice(0, 5)
+      };
+    })
+    .filter((item: PaperFigurePlanItem) => item.title && item.purpose)
+    .slice(0, 5);
+
+  const fallback: PaperFigurePlanItem[] = [
+    {
+      id: 'fig-plan-1',
+      skill: 'method_pipeline',
+      title: SCIENTIFIC_FIGURE_SKILLS.method_pipeline.defaultTitle,
+      target_section: 'Method',
+      purpose: 'Summarize the core manuscript workflow.',
+      why_it_matters: 'A method overview helps readers understand inputs, modules, and outputs before details.',
+      caption: SCIENTIFIC_FIGURE_SKILLS.method_pipeline.defaultCaption,
+      label: SCIENTIFIC_FIGURE_SKILLS.method_pipeline.defaultLabel,
+      key_elements: ['Input', 'Core method', 'Output'],
+      risks: ['May be too generic if the manuscript context is short.']
+    }
+  ];
+
+  return {
+    version: 1,
+    source: 'scientific-figure-planner',
+    generatedAt: new Date().toISOString(),
+    activeFile,
+    manuscriptSummary: String(raw?.manuscriptSummary || raw?.summary || '').trim(),
+    recommendedFigures: recommendedFigures.length ? recommendedFigures : fallback
+  };
+}
+
 function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null, fallbackSkill: PaperFigureSkill = 'method_pipeline'): PaperFigureSpec {
   const skill = normalizePaperFigureSkill(raw?.skill || fallbackSkill);
   const preset = SCIENTIFIC_FIGURE_SKILLS[skill];
@@ -2949,6 +3024,8 @@ export default function EditorPage() {
   const [plotPrompt, setPlotPrompt] = useState('');
   const [plotRetries, setPlotRetries] = useState(2);
   const [paperFigureSkill, setPaperFigureSkill] = useState<PaperFigureSkill>('method_pipeline');
+  const [paperFigurePlan, setPaperFigurePlan] = useState<PaperFigurePlan | null>(null);
+  const [selectedPaperFigurePlanId, setSelectedPaperFigurePlanId] = useState('');
   const [plotBusy, setPlotBusy] = useState(false);
   const [plotStatus, setPlotStatus] = useState('');
   const [plotAssetPath, setPlotAssetPath] = useState('');
@@ -4970,12 +5047,87 @@ export default function EditorPage() {
     }
   };
 
-  const handlePaperFigureGenerate = async () => {
+  const handlePaperFigurePlan = async () => {
     if (!projectId) return;
     setPlotBusy(true);
     setPlotStatus('');
     try {
-      const figureSkillPreset = SCIENTIFIC_FIGURE_SKILLS[paperFigureSkill];
+      const sourcePath = mainFile || activePath;
+      const sourceContent = selectionText || (sourcePath ? await ensureFileContent(sourcePath) : '');
+      const projectContext = await buildProjectContext();
+      const res = await callLLM({
+        llmConfig,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a senior scientific figure editor for academic papers. ' +
+              'Read manuscript context and propose the most useful publication figures. ' +
+              'Return JSON only. Do not include Markdown. Prefer figures that make the paper easier to understand, reproduce, or defend.'
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              activeFile: sourcePath,
+              selectedText: selectionText ? sourceContent.slice(0, 6000) : '',
+              projectContext,
+              sourcePreview: sourceContent.slice(0, 9000),
+              userHint: plotPrompt.trim(),
+              availableFigureSkills: Object.entries(SCIENTIFIC_FIGURE_SKILLS).map(([value, preset]) => ({
+                value,
+                label: preset.label,
+                description: preset.description
+              })),
+              outputSchema: {
+                manuscriptSummary: '1-2 sentence summary of the manuscript focus',
+                recommendedFigures: [
+                  {
+                    id: 'fig-plan-1',
+                    skill: 'method_pipeline',
+                    title: 'short figure title',
+                    target_section: 'where this figure should appear',
+                    purpose: 'what reader problem this figure solves',
+                    why_it_matters: 'why this figure is worth adding to the paper',
+                    caption: 'LaTeX-ready caption',
+                    label: 'fig:short-label',
+                    key_elements: ['important node or visual element'],
+                    risks: ['possible mismatch or missing evidence']
+                  }
+                ]
+              }
+            })
+          }
+        ]
+      });
+      if (!res.ok || !res.content) {
+        throw new Error(res.error || t('图示规划失败'));
+      }
+      const parsed = safeJsonParse<any>(extractJsonBlock(res.content) || res.content);
+      const plan = normalizePaperFigurePlan(parsed, sourcePath || '');
+      const planPath = 'figures/figure_plan.json';
+      const planContent = JSON.stringify(plan, null, 2);
+      await writeFileCompat(planPath, planContent);
+      setFiles((prev) => ({ ...prev, [planPath]: planContent }));
+      setPaperFigurePlan(plan);
+      setSelectedPaperFigurePlanId(plan.recommendedFigures[0]?.id || '');
+      setPaperFigureSkill(plan.recommendedFigures[0]?.skill || paperFigureSkill);
+      setPlotStatus(t('图示规划已生成 · {{count}} 个候选方案 · 已保存 figures/figure_plan.json', { count: plan.recommendedFigures.length }));
+      await refreshTree();
+    } catch (err) {
+      setPlotStatus(t('生成失败: {{error}}', { error: String(err) }));
+    } finally {
+      setPlotBusy(false);
+    }
+  };
+
+  const handlePaperFigureGenerate = async (planItem?: PaperFigurePlanItem) => {
+    if (!projectId) return;
+    setPlotBusy(true);
+    setPlotStatus('');
+    try {
+      const selectedPlan = planItem || paperFigurePlan?.recommendedFigures.find((item) => item.id === selectedPaperFigurePlanId);
+      const selectedSkill = selectedPlan?.skill || paperFigureSkill;
+      const figureSkillPreset = SCIENTIFIC_FIGURE_SKILLS[selectedSkill];
       const sourcePath = mainFile || activePath;
       const sourceContent = selectionText || (sourcePath ? await ensureFileContent(sourcePath) : '');
       const projectContext = await buildProjectContext();
@@ -4993,20 +5145,21 @@ export default function EditorPage() {
           {
             role: 'user',
             content: JSON.stringify({
-              figureSkill: paperFigureSkill,
+              figureSkill: selectedSkill,
               figureSkillLabel: figureSkillPreset.label,
               figureSkillInstruction: figureSkillPreset.prompt,
+              adoptedPlan: selectedPlan || null,
               activeFile: sourcePath,
               selectedText: selectionText ? sourceContent.slice(0, 5000) : '',
               projectContext,
               sourcePreview: sourceContent.slice(0, 7000),
               userHint: plotPrompt.trim(),
               outputSchema: {
-                skill: paperFigureSkill,
-                title: figureSkillPreset.defaultTitle,
-                caption: figureSkillPreset.defaultCaption,
-                label: figureSkillPreset.defaultLabel,
-                design_notes: ['why the selected figure type fits this paper'],
+                skill: selectedSkill,
+                title: selectedPlan?.title || figureSkillPreset.defaultTitle,
+                caption: selectedPlan?.caption || figureSkillPreset.defaultCaption,
+                label: selectedPlan?.label || figureSkillPreset.defaultLabel,
+                design_notes: ['why the selected figure type fits this paper', 'how the visual should be read'],
                 mermaid: 'optional Mermaid flowchart source, if useful',
                 nodes: [
                   { id: 'input', label: 'Input', type: 'input' },
@@ -5026,9 +5179,16 @@ export default function EditorPage() {
         throw new Error(res.error || t('图示生成失败'));
       }
       const parsed = safeJsonParse<Partial<PaperFigureSpec>>(extractJsonBlock(res.content) || res.content);
-      const spec = normalizeFigureSpec(parsed, paperFigureSkill);
+      const spec = normalizeFigureSpec({
+        ...(parsed || {}),
+        skill: parsed?.skill || selectedSkill,
+        title: parsed?.title || selectedPlan?.title,
+        caption: parsed?.caption || selectedPlan?.caption,
+        label: parsed?.label || selectedPlan?.label
+      }, selectedSkill);
       const svg = renderPaperFigureSvg(spec);
-      const baseName = (plotFilename.trim() || `paper_figure_${Date.now().toString(36)}.svg`)
+      const defaultStem = selectedPlan?.label?.replace(/^fig:/, '').replace(/[^a-zA-Z0-9_.-]+/g, '-') || `paper_figure_${Date.now().toString(36)}`;
+      const baseName = (plotFilename.trim() || `${defaultStem}.svg`)
         .replace(/\\/g, '/')
         .split('/')
         .pop() || `paper_figure_${Date.now().toString(36)}.svg`;
@@ -5039,8 +5199,9 @@ export default function EditorPage() {
         version: 1,
         source: 'scientific-figure-skill',
         generatedAt: new Date().toISOString(),
-        skill: spec.skill || paperFigureSkill,
+        skill: spec.skill || selectedSkill,
         skillLabel: figureSkillPreset.label,
+        adoptedPlan: selectedPlan || null,
         activeFile: sourcePath,
         assetPath,
         latex: {
@@ -7584,7 +7745,10 @@ ${prompt}` : ''
                       <select
                         className="input"
                         value={paperFigureSkill}
-                        onChange={(event) => setPaperFigureSkill(event.target.value as PaperFigureSkill)}
+                        onChange={(event) => {
+                          setPaperFigureSkill(event.target.value as PaperFigureSkill);
+                          setSelectedPaperFigurePlanId('');
+                        }}
                       >
                         {Object.entries(SCIENTIFIC_FIGURE_SKILLS).map(([value, preset]) => (
                           <option key={value} value={value}>{t(preset.label)}</option>
@@ -7592,6 +7756,48 @@ ${prompt}` : ''
                       </select>
                       <div className="muted">{t(SCIENTIFIC_FIGURE_SKILLS[paperFigureSkill].description)}</div>
                     </div>
+                    {paperFigurePlan && (
+                      <div className="field">
+                        <label>{t('图示规划')}</label>
+                        <select
+                          className="input"
+                          value={selectedPaperFigurePlanId}
+                          onChange={(event) => {
+                            const nextId = event.target.value;
+                            const nextPlan = paperFigurePlan.recommendedFigures.find((item) => item.id === nextId);
+                            setSelectedPaperFigurePlanId(nextId);
+                            if (nextPlan) {
+                              setPaperFigureSkill(nextPlan.skill);
+                              setPlotTitle(nextPlan.title);
+                            }
+                          }}
+                        >
+                          {paperFigurePlan.recommendedFigures.map((item, idx) => (
+                            <option key={item.id} value={item.id}>
+                              {idx + 1}. {t(SCIENTIFIC_FIGURE_SKILLS[item.skill].label)} · {item.title}
+                            </option>
+                          ))}
+                        </select>
+                        {paperFigurePlan.manuscriptSummary && (
+                          <div className="muted">{paperFigurePlan.manuscriptSummary}</div>
+                        )}
+                        {paperFigurePlan.recommendedFigures
+                          .filter((item) => item.id === selectedPaperFigurePlanId)
+                          .map((item) => (
+                            <div key={item.id} className="vision-result">
+                              <div className="muted">{t('放置位置')}: {item.target_section}</div>
+                              <div>{item.purpose}</div>
+                              <div className="muted">{item.why_it_matters}</div>
+                              {item.key_elements.length > 0 && (
+                                <div className="muted">{t('关键元素')}: {item.key_elements.join(' / ')}</div>
+                              )}
+                              {item.risks.length > 0 && (
+                                <div className="muted">{t('注意')}: {item.risks.join(' / ')}</div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
                     <div className="field">
                       <label>{t('补充提示 (可选)')}</label>
                       <textarea
@@ -7625,11 +7831,14 @@ ${prompt}` : ''
                       <button className="btn" onClick={handlePlotGenerate} disabled={plotBusy}>
                         {plotBusy ? t('生成中...') : t('生成图表')}
                       </button>
-                      <button className="btn ghost" onClick={handlePaperFigureGenerate} disabled={plotBusy}>
-                        {t('论文图示 Agent')}
+                      <button className="btn ghost" onClick={handlePaperFigurePlan} disabled={plotBusy}>
+                        {t('生成图示规划')}
+                      </button>
+                      <button className="btn ghost" onClick={() => handlePaperFigureGenerate()} disabled={plotBusy}>
+                        {selectedPaperFigurePlanId ? t('按方案生成图示') : t('论文图示 Agent')}
                       </button>
                     </div>
-                    <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，按科研图示 Skill 生成 SVG，并同步保存 .figure.json 图示包。')}</div>
+                    <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，先生成 figure_plan.json 候选方案，再按科研图示 Skill 生成 SVG 和 .figure.json 图示包。')}</div>
                     {plotStatus && <div className="muted">{plotStatus}</div>}
                     {plotAssetPath && (
                       <div className="vision-result">
