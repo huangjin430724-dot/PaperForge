@@ -783,7 +783,7 @@ curl http://localhost:8787/api/health/live
 curl http://localhost:8787/api/health/ready
 ```
 
-项目工作区也提供“系统状态”面板，可直接在界面中查看 readiness 检查结果。
+项目工作区也提供“系统状态”面板，可直接在界面中查看 readiness 检查结果，并可复制或下载脱敏诊断 JSON，便于反馈问题和部署排障。
 
 ---
 

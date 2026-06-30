@@ -722,7 +722,7 @@ curl http://localhost:8787/api/health/live
 curl http://localhost:8787/api/health/ready
 ```
 
-The project workspace also includes a system status panel that surfaces the readiness report without leaving the UI.
+The project workspace also includes a system status panel that surfaces the readiness report without leaving the UI. The panel can copy or download a sanitized diagnostics JSON file for bug reports and deployment support.
 
 ---
 

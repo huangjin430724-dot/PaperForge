@@ -151,6 +151,7 @@ export default function ProjectPage() {
   const [healthBusy, setHealthBusy] = useState(false);
   const [healthReport, setHealthReport] = useState<HealthReadyReport | null>(null);
   const [healthError, setHealthError] = useState('');
+  const [healthNotice, setHealthNotice] = useState('');
 
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [galleryCat, setGalleryCat] = useState('all');
@@ -362,6 +363,7 @@ export default function ProjectPage() {
   const loadHealthReport = useCallback(async () => {
     setHealthBusy(true);
     setHealthError('');
+    setHealthNotice('');
     try {
       const report = await getHealthReady();
       setHealthReport(report);
@@ -376,6 +378,57 @@ export default function ProjectPage() {
   const openHealthPanel = () => {
     setHealthOpen(true);
     loadHealthReport();
+  };
+
+  const buildDiagnosticsPayload = () => ({
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    source: 'PaperForge workspace system status',
+    frontend: {
+      path: window.location.pathname,
+      userAgent: window.navigator.userAgent,
+    },
+    readiness: healthReport,
+  });
+
+  const getDiagnosticsJson = () => JSON.stringify(buildDiagnosticsPayload(), null, 2);
+
+  const copyDiagnostics = async () => {
+    if (!healthReport) return;
+    const text = getDiagnosticsJson();
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setHealthNotice(t('诊断报告已复制。'));
+    } catch (err) {
+      setHealthError(t('复制诊断报告失败: {{error}}', { error: String(err) }));
+    }
+  };
+
+  const downloadDiagnostics = () => {
+    if (!healthReport) return;
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const blob = new Blob([getDiagnosticsJson()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `paperforge-diagnostics-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setHealthNotice(t('诊断报告已下载。'));
   };
 
   const handleUploadTemplate = async (file: File) => {
@@ -1021,6 +1074,7 @@ export default function ProjectPage() {
             <div className="modal-body">
               {healthBusy && <div className="muted">{t('正在检查运行状态...')}</div>}
               {healthError && <div className="status-bar"><div>{t('状态检查失败: {{error}}', { error: healthError })}</div></div>}
+              {healthNotice && <div className="status-bar success"><div>{healthNotice}</div></div>}
               {healthReport && (
                 <>
                   <div className={`health-summary ${healthReport.ok ? 'ok' : 'fail'}`}>
@@ -1056,6 +1110,8 @@ export default function ProjectPage() {
             </div>
             <div className="modal-actions">
               <button className="btn ghost" onClick={loadHealthReport} disabled={healthBusy}>{t('重新检查')}</button>
+              <button className="btn ghost" data-testid="copy-diagnostics-button" onClick={copyDiagnostics} disabled={!healthReport}>{t('复制诊断')}</button>
+              <button className="btn ghost" data-testid="download-diagnostics-button" onClick={downloadDiagnostics} disabled={!healthReport}>{t('下载诊断')}</button>
               <button className="btn" onClick={() => setHealthOpen(false)}>{t('关闭')}</button>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
 test.describe('PaperForge smoke flows', () => {
@@ -56,5 +57,22 @@ test.describe('PaperForge smoke flows', () => {
     await expect(modal.getByText(/Ready|Degraded/i)).toBeVisible();
     await expect(modal.getByText('data-dir-writable')).toBeVisible();
     await expect(modal.getByText('template-manifest-readable')).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await modal.getByTestId('download-diagnostics-button').click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/^paperforge-diagnostics-.*\.json$/);
+    const downloadPath = await download.path();
+    expect(downloadPath).toBeTruthy();
+    const diagnostics = JSON.parse(await readFile(downloadPath!, 'utf8'));
+    expect(diagnostics).toEqual(expect.objectContaining({
+      schemaVersion: 1,
+      source: 'PaperForge workspace system status',
+      readiness: expect.objectContaining({
+        ok: true,
+        status: 'ok',
+      }),
+    }));
+    expect(diagnostics.readiness.dataDir.path).toBeUndefined();
   });
 });
