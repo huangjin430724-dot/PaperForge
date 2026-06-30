@@ -394,6 +394,9 @@ type PaperFigureQaReport = {
 type PaperFigureRegistryItem = {
   assetPath: string;
   packagePath: string;
+  mermaidPath?: string;
+  tikzPath?: string;
+  latexPath?: string;
   qaPath?: string;
   title: string;
   caption: string;
@@ -2127,6 +2130,9 @@ function normalizePaperFigureRegistry(raw: any): PaperFigureRegistry {
         .map((item: any): PaperFigureRegistryItem => ({
           assetPath: String(item?.assetPath || '').trim(),
           packagePath: String(item?.packagePath || '').trim(),
+          mermaidPath: item?.mermaidPath ? String(item.mermaidPath).trim() : undefined,
+          tikzPath: item?.tikzPath ? String(item.tikzPath).trim() : undefined,
+          latexPath: item?.latexPath ? String(item.latexPath).trim() : undefined,
           qaPath: item?.qaPath ? String(item.qaPath).trim() : undefined,
           title: String(item?.title || '').trim(),
           caption: String(item?.caption || '').trim(),
@@ -2157,11 +2163,13 @@ function buildPaperFigureReport(registry: PaperFigureRegistry) {
     item.skillLabel || String(item.skill || ''),
     typeof item.qaScore === 'number' ? `${item.qaScore}/100 ${item.qaVerdict || ''}`.trim() : '未检查',
     item.label || '',
-    item.assetPath
+    item.assetPath,
+    item.mermaidPath || '',
+    item.tikzPath || ''
   ]);
   const table = [
-    '| # | 图示 | 类型 | QA | Label | SVG |',
-    '|---|---|---|---|---|---|',
+    '| # | 图示 | 类型 | QA | Label | SVG | Mermaid | TikZ |',
+    '|---|---|---|---|---|---|---|---|',
     ...rows.map((row) => `| ${row.map((cell) => String(cell).replace(/\|/g, '\\|')).join(' | ')} |`)
   ].join('\n');
   const details = registry.figures.map((item, idx) => {
@@ -2173,6 +2181,9 @@ function buildPaperFigureReport(registry: PaperFigureRegistry) {
       `- Skill: ${item.skillLabel || item.skill}`,
       `- SVG: \`${item.assetPath}\``,
       `- Package: \`${item.packagePath}\``,
+      item.mermaidPath ? `- Mermaid: \`${item.mermaidPath}\`` : '',
+      item.tikzPath ? `- TikZ: \`${item.tikzPath}\`` : '',
+      item.latexPath ? `- LaTeX Snippet: \`${item.latexPath}\`` : '',
       item.qaPath ? `- QA: \`${item.qaPath}\`` : '- QA: 未检查',
       typeof item.qaScore === 'number' ? `- QA Score: ${item.qaScore}/100 ${item.qaVerdict || ''}` : '',
       `- Caption: ${caption}`,
@@ -2199,6 +2210,93 @@ function buildPaperFigureReport(registry: PaperFigureRegistry) {
     '',
     details || '暂无科研图示资产。'
   ].join('\n');
+}
+
+function escapeMermaidLabel(value: string) {
+  return value.replace(/["<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function escapeLatexText(value: string) {
+  return value
+    .replace(/\\/g, '\\textbackslash{}')
+    .replace(/([#$%&_{}])/g, '\\$1')
+    .replace(/\^/g, '\\textasciicircum{}')
+    .replace(/~/g, '\\textasciitilde{}');
+}
+
+function buildPaperFigureMermaid(spec: PaperFigureSpec) {
+  if (spec.mermaid && /^(flowchart|graph)\s+/i.test(spec.mermaid.trim())) {
+    return spec.mermaid.trim();
+  }
+  const skill = normalizePaperFigureSkill(spec.skill);
+  const direction = skill === 'model_architecture' ? 'TD' : 'LR';
+  const nodeLines = spec.nodes.map((node) => {
+    const id = node.id.replace(/[^a-zA-Z0-9_]/g, '_');
+    const label = escapeMermaidLabel(node.label || node.id);
+    if (node.type === 'storage') return `  ${id}[("${label}")]`;
+    if (node.type === 'input') return `  ${id}(["${label}"])`;
+    if (node.type === 'output') return `  ${id}(("${label}"))`;
+    return `  ${id}["${label}"]`;
+  });
+  const edgeLines = spec.edges.map((edge) => {
+    const from = edge.from.replace(/[^a-zA-Z0-9_]/g, '_');
+    const to = edge.to.replace(/[^a-zA-Z0-9_]/g, '_');
+    const label = escapeMermaidLabel(edge.label || '');
+    return label ? `  ${from} -->|"${label}"| ${to}` : `  ${from} --> ${to}`;
+  });
+  return [`flowchart ${direction}`, ...nodeLines, ...edgeLines].join('\n');
+}
+
+function buildPaperFigureTikz(spec: PaperFigureSpec) {
+  const skill = normalizePaperFigureSkill(spec.skill);
+  const direction = skill === 'model_architecture' ? 'vertical' : 'horizontal';
+  const nodes = spec.nodes.map((node, idx) => {
+    const id = node.id.replace(/[^a-zA-Z0-9_]/g, '_');
+    const x = direction === 'horizontal' ? idx * 3.2 : 0;
+    const y = direction === 'vertical' ? -idx * 1.8 : 0;
+    return `\\node[paperforgeNode] (${id}) at (${x.toFixed(1)},${y.toFixed(1)}) {${escapeLatexText(node.label || node.id)}};`;
+  });
+  const edges = spec.edges.map((edge) => {
+    const from = edge.from.replace(/[^a-zA-Z0-9_]/g, '_');
+    const to = edge.to.replace(/[^a-zA-Z0-9_]/g, '_');
+    const label = edge.label ? ` node[midway, above, font=\\scriptsize] {${escapeLatexText(edge.label)}}` : '';
+    return `\\draw[paperforgeArrow] (${from}) --${label} (${to});`;
+  });
+  return [
+    '% Requires: \\usepackage{tikz}',
+    '% Optional: \\usetikzlibrary{arrows.meta, positioning}',
+    '\\begin{tikzpicture}[',
+    '  paperforgeNode/.style={draw, rounded corners, align=center, minimum width=2.4cm, minimum height=0.9cm, fill=white},',
+    '  paperforgeArrow/.style={-{Latex[length=2mm]}, thick}',
+    ']',
+    ...nodes,
+    ...edges,
+    '\\end{tikzpicture}'
+  ].join('\n');
+}
+
+function buildPaperFigureLatexSnippet(assetPath: string, spec: PaperFigureSpec) {
+  return [
+    '\\begin{figure}[t]',
+    '\\centering',
+    `\\includegraphics[width=0.95\\linewidth]{${assetPath}}`,
+    `\\caption{${spec.caption || 'Overview of the proposed workflow.'}}`,
+    `\\label{${spec.label || 'fig:paperforge-figure'}}`,
+    '\\end{figure}',
+    ''
+  ].join('\n');
+}
+
+function buildPaperFigureEditableAssets(assetPath: string, spec: PaperFigureSpec) {
+  const stem = assetPath.replace(/\.svg$/i, '');
+  return {
+    mermaidPath: `${stem}.mmd`,
+    tikzPath: `${stem}.tikz.tex`,
+    latexPath: `${stem}.figure.tex`,
+    mermaid: buildPaperFigureMermaid(spec),
+    tikz: buildPaperFigureTikz(spec),
+    latexSnippet: buildPaperFigureLatexSnippet(assetPath, spec)
+  };
 }
 
 function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null, fallbackSkill: PaperFigureSkill = 'method_pipeline'): PaperFigureSpec {
@@ -5304,6 +5402,9 @@ export default function EditorPage() {
     const nextEntry: PaperFigureRegistryItem = {
       assetPath: entry.assetPath || existing?.assetPath || '',
       packagePath: entry.packagePath || existing?.packagePath || '',
+      mermaidPath: entry.mermaidPath || existing?.mermaidPath,
+      tikzPath: entry.tikzPath || existing?.tikzPath,
+      latexPath: entry.latexPath || existing?.latexPath,
       qaPath: entry.qaPath || existing?.qaPath,
       title: entry.title || existing?.title || '',
       caption: entry.caption || existing?.caption || '',
@@ -5433,6 +5534,7 @@ export default function EditorPage() {
       const qaPath = 'figures/demo_paperforge_figure_agent.figure.qa.json';
       const planPath = 'figures/figure_plan.json';
       const svg = renderPaperFigureSvg(demoSpec);
+      const editableAssets = buildPaperFigureEditableAssets(assetPath, demoSpec);
       const packageContent = JSON.stringify({
         version: 1,
         source: 'scientific-figure-demo',
@@ -5442,6 +5544,14 @@ export default function EditorPage() {
         adoptedPlan: demoPlan.recommendedFigures[0],
         activeFile: activeFileForDemo,
         assetPath,
+        editable: {
+          mermaidPath: editableAssets.mermaidPath,
+          tikzPath: editableAssets.tikzPath,
+          latexPath: editableAssets.latexPath,
+          mermaid: editableAssets.mermaid,
+          tikz: editableAssets.tikz,
+          latexSnippet: editableAssets.latexSnippet
+        },
         latex: {
           includegraphics: `\\includegraphics[width=0.95\\linewidth]{${assetPath}}`,
           caption: demoSpec.caption,
@@ -5472,12 +5582,18 @@ export default function EditorPage() {
       };
       await writeFileCompat(planPath, JSON.stringify(demoPlan, null, 2));
       await writeFileCompat(assetPath, svg);
+      await writeFileCompat(editableAssets.mermaidPath, editableAssets.mermaid);
+      await writeFileCompat(editableAssets.tikzPath, editableAssets.tikz);
+      await writeFileCompat(editableAssets.latexPath, editableAssets.latexSnippet);
       await writeFileCompat(packagePath, packageContent);
       await writeFileCompat(qaPath, JSON.stringify(qaReport, null, 2));
       setFiles((prev) => ({
         ...prev,
         [planPath]: JSON.stringify(demoPlan, null, 2),
         [assetPath]: svg,
+        [editableAssets.mermaidPath]: editableAssets.mermaid,
+        [editableAssets.tikzPath]: editableAssets.tikz,
+        [editableAssets.latexPath]: editableAssets.latexSnippet,
         [packagePath]: packageContent,
         [qaPath]: JSON.stringify(qaReport, null, 2)
       }));
@@ -5488,6 +5604,9 @@ export default function EditorPage() {
       const registry = await updatePaperFigureRegistry({
         assetPath,
         packagePath,
+        mermaidPath: editableAssets.mermaidPath,
+        tikzPath: editableAssets.tikzPath,
+        latexPath: editableAssets.latexPath,
         qaPath,
         title: demoSpec.title || 'PaperForge Figure Agent Workflow',
         caption: demoSpec.caption || '',
@@ -5504,7 +5623,7 @@ export default function EditorPage() {
       await writeFileCompat('figures/figure_report.md', report);
       setFiles((prev) => ({ ...prev, 'figures/figure_report.md': report }));
       setPlotAssetPath(assetPath);
-      setPlotStatus(t('示例图示资产已生成 · 包含 SVG、figure package、QA、索引和报告'));
+      setPlotStatus(t('示例图示资产已生成 · 包含 SVG、Mermaid、TikZ、LaTeX snippet、QA、索引和报告'));
       await refreshTree();
     } catch (err) {
       setPlotStatus(t('示例生成失败: {{error}}', { error: String(err) }));
@@ -5662,6 +5781,7 @@ export default function EditorPage() {
       const safeName = baseName.toLowerCase().endsWith('.svg') ? baseName : `${baseName}.svg`;
       const assetPath = `figures/${safeName.replace(/[^a-zA-Z0-9_.-]+/g, '-')}`;
       const packagePath = assetPath.replace(/\.svg$/i, '.figure.json');
+      const editableAssets = buildPaperFigureEditableAssets(assetPath, spec);
       const packageContent = JSON.stringify({
         version: 1,
         source: 'scientific-figure-skill',
@@ -5671,6 +5791,14 @@ export default function EditorPage() {
         adoptedPlan: selectedPlan || null,
         activeFile: sourcePath,
         assetPath,
+        editable: {
+          mermaidPath: editableAssets.mermaidPath,
+          tikzPath: editableAssets.tikzPath,
+          latexPath: editableAssets.latexPath,
+          mermaid: editableAssets.mermaid,
+          tikz: editableAssets.tikz,
+          latexSnippet: editableAssets.latexSnippet
+        },
         latex: {
           includegraphics: `\\includegraphics[width=0.95\\linewidth]{${assetPath}}`,
           caption: spec.caption,
@@ -5679,11 +5807,24 @@ export default function EditorPage() {
         spec
       }, null, 2);
       await writeFileCompat(assetPath, svg);
+      await writeFileCompat(editableAssets.mermaidPath, editableAssets.mermaid);
+      await writeFileCompat(editableAssets.tikzPath, editableAssets.tikz);
+      await writeFileCompat(editableAssets.latexPath, editableAssets.latexSnippet);
       await writeFileCompat(packagePath, packageContent);
-      setFiles((prev) => ({ ...prev, [assetPath]: svg, [packagePath]: packageContent }));
+      setFiles((prev) => ({
+        ...prev,
+        [assetPath]: svg,
+        [editableAssets.mermaidPath]: editableAssets.mermaid,
+        [editableAssets.tikzPath]: editableAssets.tikz,
+        [editableAssets.latexPath]: editableAssets.latexSnippet,
+        [packagePath]: packageContent
+      }));
       await updatePaperFigureRegistry({
         assetPath,
         packagePath,
+        mermaidPath: editableAssets.mermaidPath,
+        tikzPath: editableAssets.tikzPath,
+        latexPath: editableAssets.latexPath,
         title: spec.title || figureSkillPreset.defaultTitle,
         caption: spec.caption || figureSkillPreset.defaultCaption,
         label: spec.label || figureSkillPreset.defaultLabel,
@@ -5694,19 +5835,10 @@ export default function EditorPage() {
         updatedAt: new Date().toISOString()
       });
       setPlotAssetPath(assetPath);
-      setPlotStatus(t('科研图示已生成 · {{skill}} · 已保存 SVG、figure package，并更新 figures/index.json', { skill: figureSkillPreset.label }));
+      setPlotStatus(t('科研图示已生成 · {{skill}} · 已保存 SVG、Mermaid、TikZ、LaTeX snippet 和 figure package', { skill: figureSkillPreset.label }));
       await refreshTree();
       if (plotAutoInsert) {
-        const figureSnippet = [
-          '\\begin{figure}[t]',
-          '\\centering',
-          `\\includegraphics[width=0.95\\linewidth]{${assetPath}}`,
-          `\\caption{${spec.caption || 'Overview of the proposed workflow.'}}`,
-          `\\label{${spec.label || 'fig:method-pipeline'}}`,
-          '\\end{figure}',
-          ''
-        ].join('\n');
-        insertAtCursor(figureSnippet, { block: true });
+        insertAtCursor(editableAssets.latexSnippet, { block: true });
       }
     } catch (err) {
       setPlotStatus(t('生成失败: {{error}}', { error: String(err) }));

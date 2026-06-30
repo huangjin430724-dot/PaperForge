@@ -17,6 +17,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 - Scientific figure skill presets.
 - Manuscript-aware `figure_plan.json` generation.
 - Plan-driven SVG generation and `.figure.json` packages.
+- Editable Mermaid `.mmd`, TikZ `.tikz.tex`, and ready-to-insert `.figure.tex` exports for generated figures.
 - Figure QA reports with score, verdict, issues, caption suggestions, and revision prompts.
 - Skill-aware layouts for pipelines, architectures, result cards, timelines, and system overviews.
 - Figure registry at `figures/index.json`.
@@ -61,7 +62,6 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 ### Figure Agent Refinement
 
 - Add editable node/edge controls after SVG generation.
-- Add export to Mermaid and TikZ for users who prefer text-native diagrams.
 - Add journal/template-aware figure style checks.
 - Add batch generation from `figure_plan.json`.
 

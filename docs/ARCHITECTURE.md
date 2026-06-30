@@ -74,6 +74,9 @@ Figure Agent assets live under `figures/`:
 ```text
 figures/figure_plan.json
 figures/<name>.svg
+figures/<name>.mmd
+figures/<name>.tikz.tex
+figures/<name>.figure.tex
 figures/<name>.figure.json
 figures/<name>.figure.qa.json
 figures/index.json
@@ -91,6 +94,7 @@ flowchart TD
   plan["figures/figure_plan.json"]
   renderer["Skill-aware SVG renderer"]
   svg["figures/*.svg"]
+  editable["figures/*.mmd / *.tikz.tex / *.figure.tex"]
   package["figures/*.figure.json"]
   qa["Figure QA"]
   qaReport["figures/*.figure.qa.json"]
@@ -102,9 +106,11 @@ flowchart TD
   planner --> plan
   plan --> renderer
   renderer --> svg
+  renderer --> editable
   renderer --> package
   svg --> qa
   package --> qa
+  editable --> package
   qa --> qaReport
   package --> registry
   qaReport --> registry
@@ -118,7 +124,7 @@ flowchart TD
 The workflow is designed around reusable assets rather than one-off images:
 
 - Planning creates candidate figures with purpose, section, caption, label, and risks.
-- Generation creates an SVG plus a structured `.figure.json` package.
+- Generation creates an SVG, Mermaid source, TikZ draft, LaTeX snippet, and a structured `.figure.json` package.
 - QA creates a `.figure.qa.json` report with score, verdict, issues, and revision prompt.
 - Registry tracks all generated figures in `figures/index.json`.
 - Report export creates `figures/figure_report.md` for review and handoff.

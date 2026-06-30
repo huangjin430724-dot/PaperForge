@@ -163,6 +163,9 @@ PaperForge is a local-first LaTeX + AI workspace for academic writing, optimized
 ### 📊 Charts & Recognition
 
 - **Table-to-chart**: generate charts directly from tables
+- **Scientific Figure Agent**: generate manuscript-aware figure plans, skill-aware SVGs, QA reports, registry entries, and reusable figure reports
+- **Editable figure packages**: each generated figure can include SVG, `.figure.json`, Mermaid `.mmd`, TikZ `.tikz.tex`, and a ready-to-insert LaTeX snippet
+- **Figure asset quality gate**: `npm run check:figures` validates registry, SVG, package, editable source, QA, and report consistency
 - **Smart recognition**: formulas and charts auto-detected
 
 ### 📝 Peer Review

@@ -51,6 +51,25 @@ function validateFigurePackage(projectDir, item) {
   if (!Array.isArray(pkg.spec?.edges)) {
     failures.push(`${pkgPath}: spec.edges must be an array`);
   }
+  for (const key of ['mermaidPath', 'tikzPath', 'latexPath']) {
+    const expected = item[key];
+    const actual = pkg.editable?.[key];
+    if (expected && actual !== expected) {
+      failures.push(`${pkgPath}: editable.${key} does not match registry (${actual || 'missing'} !== ${expected})`);
+    }
+    if (actual && !exists(projectDir, actual)) {
+      failures.push(`${pkgPath}: editable.${key} points to missing file ${actual}`);
+    }
+  }
+  if (pkg.editable?.mermaidPath && !String(pkg.editable?.mermaid || '').trim()) {
+    warnings.push(`${pkgPath}: editable mermaid source is empty`);
+  }
+  if (pkg.editable?.tikzPath && !String(pkg.editable?.tikz || '').trim()) {
+    warnings.push(`${pkgPath}: editable TikZ source is empty`);
+  }
+  if (pkg.editable?.latexPath && !String(pkg.editable?.latexSnippet || '').includes('\\includegraphics')) {
+    warnings.push(`${pkgPath}: editable LaTeX snippet does not include includegraphics`);
+  }
 }
 
 function validateQa(projectDir, item) {
@@ -100,6 +119,11 @@ function validateProject(projectDir) {
     }
     if (item.packagePath && !exists(projectDir, item.packagePath)) {
       failures.push(`${registryPath}: missing package ${item.packagePath}`);
+    }
+    for (const key of ['mermaidPath', 'tikzPath', 'latexPath']) {
+      if (item[key] && !exists(projectDir, item[key])) {
+        failures.push(`${registryPath}: missing editable asset ${item[key]}`);
+      }
     }
     if (item.qaPath && !exists(projectDir, item.qaPath)) {
       failures.push(`${registryPath}: missing QA report ${item.qaPath}`);

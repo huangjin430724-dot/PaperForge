@@ -144,12 +144,13 @@ PaperForge 是一个面向学术写作的本地部署 LaTeX + AI 工作台，强
 - **科研图示 Agent**：读取论文上下文，先生成 `figures/figure_plan.json` 图示规划，再按方法流程、模型结构、实验流程、结果分析、研究脉络、系统总览等 Skill 生成 SVG
 - **Skill-aware SVG 渲染**：不同科研图示自动采用不同布局，支持横向流程、分层架构、结果卡片、研究脉络轴和系统总览等版式
 - **结构化图示包**：每张科研图同步保存 `.figure.json`，记录采用的规划方案、图注、LaTeX 插入代码、节点与边，方便复用和后续修改
+- **可编辑图示源码**：每张科研图同步导出 Mermaid `.mmd`、TikZ `.tikz.tex` 和 `.figure.tex` 插入片段，便于继续手工微调、投稿排版和版本管理
 - **图示质量检查**：生成后输出 `.figure.qa.json`，从清晰度、论文一致性、图注、LaTeX 可用性等角度给出评分、问题和修改提示
 - **图示资产索引**：自动维护 `figures/index.json`，集中记录每张科研图的 SVG、图包、QA 分数、图注与标签，便于追踪和复用
 - **图示资产库 UI**：在绘图面板中加载历史科研图示，查看 QA 分数并一键预览或插入 LaTeX 图模板
 - **图示报告导出**：一键生成 `figures/figure_report.md`，汇总图示清单、QA 分数、caption、label 和可复制的 LaTeX 代码
-- **离线演示资产**：无需调用 API 即可生成一套 Figure Agent 示例资产，包含 SVG、图包、QA、索引和报告，便于首次体验与项目汇报
-- **图示资产质量门禁**：通过 `npm run check:figures` 校验图示索引、SVG、图包、QA 报告和导出报告之间的一致性
+- **离线演示资产**：无需调用 API 即可生成一套 Figure Agent 示例资产，包含 SVG、Mermaid、TikZ、图包、QA、索引和报告，便于首次体验与项目汇报
+- **图示资产质量门禁**：通过 `npm run check:figures` 校验图示索引、SVG、可编辑源码、图包、QA 报告和导出报告之间的一致性
 - **CI 自动化检查**：GitHub Actions 自动运行 lint、test、typecheck、图示资产检查和生产构建
 - **智能识别**：公式与图表结构自动识别
 

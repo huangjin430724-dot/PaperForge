@@ -20,6 +20,9 @@ Generated files:
 ```text
 figures/figure_plan.json
 figures/demo_paperforge_figure_agent.svg
+figures/demo_paperforge_figure_agent.mmd
+figures/demo_paperforge_figure_agent.tikz.tex
+figures/demo_paperforge_figure_agent.figure.tex
 figures/demo_paperforge_figure_agent.figure.json
 figures/demo_paperforge_figure_agent.figure.qa.json
 figures/index.json
@@ -74,6 +77,18 @@ Stores candidate figure ideas:
 
 The generated scientific figure. SVG is used because it is readable, lightweight, and easy to version.
 
+### `figures/*.mmd`
+
+Editable Mermaid source generated from the same node/edge spec. Use it when you want a text-native diagram for docs, slides, or quick structural edits.
+
+### `figures/*.tikz.tex`
+
+Editable TikZ draft generated from the figure package. Use it when a LaTeX-native figure is preferred for final paper polishing.
+
+### `figures/*.figure.tex`
+
+A ready-to-insert LaTeX `figure` snippet pointing to the generated SVG with caption and label.
+
 ### `figures/*.figure.json`
 
 The structured figure package. It records:
@@ -83,6 +98,7 @@ The structured figure package. It records:
 - source file
 - SVG path
 - LaTeX include snippet
+- editable Mermaid / TikZ / LaTeX snippet paths and source
 - caption and label
 - editable node/edge spec
 
@@ -128,9 +144,11 @@ The check validates:
 
 - `figures/index.json` parses correctly
 - SVG files exist
+- Mermaid, TikZ, and LaTeX snippet files exist when declared
 - `.figure.json` packages exist
 - `.figure.qa.json` reports exist when referenced
 - registry paths match package and QA paths
+- editable source paths match the package metadata
 - package specs include nodes and edges
 - QA scores are numeric
 - `figure_report.md` references generated figures
@@ -157,7 +175,7 @@ Use this short path in a presentation:
 
 One-sentence explanation:
 
-> PaperForge Figure Agent converts manuscript context into a managed scientific figure asset pipeline, including planning, SVG generation, QA, registry tracking, LaTeX insertion, report export, and automated validation.
+> PaperForge Figure Agent converts manuscript context into a managed scientific figure asset pipeline, including planning, SVG generation, editable Mermaid/TikZ exports, QA, registry tracking, LaTeX insertion, report export, and automated validation.
 
 ## Notes and Limitations
 

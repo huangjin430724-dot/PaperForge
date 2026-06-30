@@ -14,6 +14,9 @@ const now = new Date().toISOString();
 const projectRoot = path.join(dataDir, projectId);
 
 const assetPath = 'figures/demo_paperforge_research_workflow.svg';
+const mermaidPath = 'figures/demo_paperforge_research_workflow.mmd';
+const tikzPath = 'figures/demo_paperforge_research_workflow.tikz.tex';
+const latexPath = 'figures/demo_paperforge_research_workflow.figure.tex';
 const packagePath = 'figures/demo_paperforge_research_workflow.figure.json';
 const qaPath = 'figures/demo_paperforge_research_workflow.figure.qa.json';
 
@@ -119,6 +122,44 @@ const figureSpec = {
   ]
 };
 
+const mermaidSource = `flowchart LR
+  source(["Source Manuscript"])
+  style[("Style Memory")]
+  evidence[("Evidence Layer")]
+  figure["Figure Agent"]
+  paper(("Final Paper"))
+  source -->|"extract"| style
+  style -->|"align"| evidence
+  evidence -->|"ground"| figure
+  figure -->|"insert"| paper
+`;
+
+const tikzSource = `% Requires: \\usepackage{tikz}
+% Optional: \\usetikzlibrary{arrows.meta, positioning}
+\\begin{tikzpicture}[
+  paperforgeNode/.style={draw, rounded corners, align=center, minimum width=2.4cm, minimum height=0.9cm, fill=white},
+  paperforgeArrow/.style={-{Latex[length=2mm]}, thick}
+]
+\\node[paperforgeNode] (source) at (0.0,0.0) {Source Manuscript};
+\\node[paperforgeNode] (style) at (3.2,0.0) {Style Memory};
+\\node[paperforgeNode] (evidence) at (6.4,0.0) {Evidence Layer};
+\\node[paperforgeNode] (figure) at (9.6,0.0) {Figure Agent};
+\\node[paperforgeNode] (paper) at (12.8,0.0) {Final Paper};
+\\draw[paperforgeArrow] (source) -- node[midway, above, font=\\scriptsize] {extract} (style);
+\\draw[paperforgeArrow] (style) -- node[midway, above, font=\\scriptsize] {align} (evidence);
+\\draw[paperforgeArrow] (evidence) -- node[midway, above, font=\\scriptsize] {ground} (figure);
+\\draw[paperforgeArrow] (figure) -- node[midway, above, font=\\scriptsize] {insert} (paper);
+\\end{tikzpicture}
+`;
+
+const latexSnippet = `\\begin{figure}[t]
+\\centering
+\\includegraphics[width=0.95\\linewidth]{${assetPath}}
+\\caption{${figureSpec.caption}}
+\\label{${figureSpec.label}}
+\\end{figure}
+`;
+
 const figurePlan = {
   version: 1,
   source: 'seed-demo-project',
@@ -150,6 +191,14 @@ const figurePackage = {
   adoptedPlan: figurePlan.recommendedFigures[0],
   activeFile: 'main.tex',
   assetPath,
+  editable: {
+    mermaidPath,
+    tikzPath,
+    latexPath,
+    mermaid: mermaidSource,
+    tikz: tikzSource,
+    latexSnippet
+  },
   latex: {
     includegraphics: `\\includegraphics[width=0.95\\linewidth]{${assetPath}}`,
     caption: figureSpec.caption,
@@ -188,6 +237,9 @@ const registry = {
     {
       assetPath,
       packagePath,
+      mermaidPath,
+      tikzPath,
+      latexPath,
       qaPath,
       title: figureSpec.title,
       caption: figureSpec.caption,
@@ -309,7 +361,7 @@ Use it to demonstrate:
 - LaTeX writing in \`main.tex\`
 - BibTeX reference management in \`refs/reference.bib\`
 - Figure Agent planning in \`figures/figure_plan.json\`
-- SVG figure package, QA report, registry, and asset report
+- SVG, Mermaid, TikZ, LaTeX snippet, QA report, registry, and asset report
 
 Recommended demo flow:
 
@@ -340,6 +392,9 @@ async function main() {
       figures: [
         'figure_plan.json',
         'demo_paperforge_research_workflow.svg',
+        'demo_paperforge_research_workflow.mmd',
+        'demo_paperforge_research_workflow.tikz.tex',
+        'demo_paperforge_research_workflow.figure.tex',
         'demo_paperforge_research_workflow.figure.json',
         'demo_paperforge_research_workflow.figure.qa.json',
         'index.json',
@@ -356,6 +411,9 @@ async function main() {
   await writeFile('refs/reference.bib', bib);
   await writeFile('figures/figure_plan.json', JSON.stringify(figurePlan, null, 2));
   await writeFile(assetPath, svg());
+  await writeFile(mermaidPath, mermaidSource);
+  await writeFile(tikzPath, tikzSource);
+  await writeFile(latexPath, latexSnippet);
   await writeFile(packagePath, JSON.stringify(figurePackage, null, 2));
   await writeFile(qaPath, JSON.stringify(qaReport, null, 2));
   await writeFile('figures/index.json', JSON.stringify(registry, null, 2));

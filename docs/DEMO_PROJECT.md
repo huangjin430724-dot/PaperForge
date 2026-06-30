@@ -32,7 +32,7 @@ Remove-Item Env:PaperForge_DATA_DIR
 - `refs/reference.bib` as a BibTeX example.
 - `figures/figure_plan.json` as a Figure Agent planning artifact.
 - `figures/demo_paperforge_research_workflow.svg` as an offline scientific figure.
-- `.figure.json`, `.figure.qa.json`, `figures/index.json`, and `figures/figure_report.md` for the Figure Agent asset workflow.
+- `.mmd`, `.tikz.tex`, `.figure.tex`, `.figure.json`, `.figure.qa.json`, `figures/index.json`, and `figures/figure_report.md` for the editable Figure Agent asset workflow.
 
 ## Validate
 
