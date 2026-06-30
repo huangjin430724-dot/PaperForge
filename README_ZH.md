@@ -771,6 +771,7 @@ npm run e2e
 npm run seed:demo
 npm run backup:data
 npm run release:bundle
+npm run security:scan
 npm run build
 ```
 

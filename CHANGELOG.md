@@ -14,6 +14,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 - `npm run backup:data` and `npm run restore:data` for `.tgz` data backup, inspection, and restore workflows.
 - `/api/health/live` and `/api/health/ready` endpoints with readiness checks for data directory and template manifest health.
 - `npm run release:bundle` and `npm run release:verify` for source release archives with manifest and SHA256 checks.
+- `npm run security:scan` for tracked-file secret and private artifact checks, plus Dependabot configuration for npm and GitHub Actions.
 - `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.

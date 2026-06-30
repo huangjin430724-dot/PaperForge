@@ -37,6 +37,9 @@ jobs:
       - name: Check figure assets
         run: npm run check:figures
 
+      - name: Security scan
+        run: npm run security:scan
+
       - name: Seed demo project
         run: PaperForge_DATA_DIR=.tmp/ci-demo npm run seed:demo
 

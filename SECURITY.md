@@ -30,6 +30,14 @@ Do not include the following in public issues, pull requests, screenshots, or ge
 - Internal server URLs, tunnel tokens, or collaboration invite tokens.
 - Full generated project directories from private work.
 
+Before pushing or opening a PR, run:
+
+```bash
+npm run security:scan
+```
+
+The scan checks Git-tracked files for common API key/token patterns and accidental private/generated paths such as `.env`, `data/`, `backups/`, and release artifacts.
+
 ## Scope
 
 Security-sensitive areas include:
