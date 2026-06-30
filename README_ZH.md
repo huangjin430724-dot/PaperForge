@@ -770,6 +770,7 @@ npm run check
 npm run check:figures
 npm run docs:check
 npm run deps:check
+npm run licenses:check
 npm run env:check
 npm run diagnostics:check
 npm run maturity:check
@@ -804,6 +805,7 @@ npm run docs:check
 npm run maturity:check
 npm run status:report
 npm run deps:check
+npm run licenses:check
 npm run release:notes
 ```
 

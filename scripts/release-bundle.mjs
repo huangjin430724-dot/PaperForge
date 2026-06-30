@@ -32,6 +32,7 @@ const REQUIRED_FILES = [
   'scripts/check-doc-links.mjs',
   'scripts/maturity-check.mjs',
   'scripts/dependency-check.mjs',
+  'scripts/license-check.mjs',
   'scripts/status-report.mjs',
   'scripts/env-check.mjs',
   'scripts/release-notes.mjs',

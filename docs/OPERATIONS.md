@@ -79,6 +79,12 @@ Validate workspace dependency metadata and lockfile consistency:
 npm run deps:check
 ```
 
+Validate dependency license metadata for obvious release blockers:
+
+```bash
+npm run licenses:check
+```
+
 Typical response:
 
 ```json
@@ -113,6 +119,7 @@ npm run doctor
 npm run check:figures
 npm run docs:check
 npm run deps:check
+npm run licenses:check
 npm run env:check
 npm run diagnostics:check
 npm run maturity:check

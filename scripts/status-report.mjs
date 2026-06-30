@@ -67,6 +67,7 @@ async function main() {
   const maturity = run('npm', ['run', 'maturity:check']);
   const docs = run('npm', ['run', 'docs:check']);
   const deps = run('npm', ['run', 'deps:check']);
+  const licenses = run('npm', ['run', 'licenses:check']);
   const env = run('npm', ['run', 'env:check']);
   const diagnostics = run('npm', ['run', 'diagnostics:check']);
 
@@ -74,6 +75,7 @@ async function main() {
     ['Maturity scorecard', maturity.ok, parseMaturity(maturity.stdout)],
     ['Documentation links', docs.ok, parseDocLinks(docs.stdout)],
     ['Dependency metadata', deps.ok, deps.ok ? 'workspace and lockfile consistent' : 'failed'],
+    ['Dependency licenses', licenses.ok, licenses.ok ? 'no blocked licenses detected' : 'failed'],
     ['Environment template', env.ok, env.ok ? 'template valid' : 'failed'],
     ['Diagnostics schema', diagnostics.ok, diagnostics.ok ? 'schema and redaction valid' : 'failed']
   ];

@@ -43,6 +43,9 @@ jobs:
       - name: Check dependency metadata
         run: npm run deps:check
 
+      - name: Check dependency licenses
+        run: npm run licenses:check
+
       - name: Validate environment template
         run: npm run env:check
 
