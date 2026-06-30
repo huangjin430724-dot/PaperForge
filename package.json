@@ -1,5 +1,6 @@
 {
   "name": "PaperForge",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -21,6 +22,8 @@
     "seed:demo": "node scripts/seed-demo-project.mjs",
     "backup:data": "node scripts/backup-data.mjs create",
     "restore:data": "node scripts/backup-data.mjs restore",
+    "release:bundle": "node scripts/release-bundle.mjs create",
+    "release:verify": "node scripts/release-bundle.mjs verify",
     "doctor": "node scripts/doctor.mjs",
     "check:figures": "node scripts/check-figure-assets.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run check:figures && npm run build",

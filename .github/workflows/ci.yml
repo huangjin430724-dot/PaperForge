@@ -50,6 +50,11 @@ jobs:
           npm run restore:data -- --file .tmp/ci-demo-backup.tgz --data-dir .tmp/ci-demo-restored --replace
           node scripts/check-figure-assets.mjs .tmp/ci-demo-restored/demo-paperforge-showcase --require
 
+      - name: Create and verify release bundle
+        run: |
+          npm run release:bundle -- --out-dir .tmp/release
+          npm run release:verify -- --file .tmp/release/PaperForge-0.1.0.tgz
+
       - name: Build
         run: npm run build
 

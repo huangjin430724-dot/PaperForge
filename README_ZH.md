@@ -54,6 +54,7 @@
 [![演示项目](https://img.shields.io/badge/🎬-演示项目-ffcf99?style=for-the-badge)](docs/DEMO_PROJECT.md)
 [![备份恢复](https://img.shields.io/badge/💾-备份恢复-8bd3dd?style=for-the-badge)](docs/DATA_BACKUP.md)
 [![运行维护](https://img.shields.io/badge/📈-运行维护-95d5b2?style=for-the-badge)](docs/OPERATIONS.md)
+[![发布包](https://img.shields.io/badge/📦-发布包-f4a261?style=for-the-badge)](docs/RELEASE.md)
 <a href="#wechat-group" target="_self">
   <img alt="WeChat" src="https://img.shields.io/badge/💬-微信群-07C160?style=for-the-badge" />
 </a>
@@ -769,6 +770,7 @@ npm run check:figures
 npm run e2e
 npm run seed:demo
 npm run backup:data
+npm run release:bundle
 npm run build
 ```
 

@@ -19,6 +19,7 @@ brand-backup-*/
 outputs/
 reports/
 backups/
+releases/
 .tmp/
 test-results/
 playwright-report/

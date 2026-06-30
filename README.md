@@ -74,6 +74,9 @@
 <a href="docs/OPERATIONS.md" target="_self">
   <img alt="Operations" src="https://img.shields.io/badge/📈-Operations-95d5b2?style=for-the-badge" />
 </a>
+<a href="docs/RELEASE.md" target="_self">
+  <img alt="Release" src="https://img.shields.io/badge/📦-Release_Bundle-f4a261?style=for-the-badge" />
+</a>
 <a href="#wechat-group" target="_self">
   <img alt="WeChat" src="https://img.shields.io/badge/💬-WeChat_Group-07C160?style=for-the-badge" />
 </a>
@@ -706,6 +709,7 @@ npm run check:figures
 npm run e2e
 npm run seed:demo
 npm run backup:data
+npm run release:bundle
 npm run build
 ```
 
