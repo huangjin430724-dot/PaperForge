@@ -138,6 +138,7 @@ PaperForge 是一个面向学术写作的本地部署 LaTeX + AI 工作台，强
 - **图示资产库 UI**：在绘图面板中加载历史科研图示，查看 QA 分数并一键预览或插入 LaTeX 图模板
 - **图示报告导出**：一键生成 `figures/figure_report.md`，汇总图示清单、QA 分数、caption、label 和可复制的 LaTeX 代码
 - **离线演示资产**：无需调用 API 即可生成一套 Figure Agent 示例资产，包含 SVG、图包、QA、索引和报告，便于首次体验与项目汇报
+- **图示资产质量门禁**：通过 `npm run check:figures` 校验图示索引、SVG、图包、QA 报告和导出报告之间的一致性
 - **智能识别**：公式与图表结构自动识别
 
 ### 📝 同行评审

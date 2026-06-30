@@ -15,7 +15,8 @@
     "typecheck": "npm --workspace apps/frontend run typecheck",
     "lint": "eslint .",
     "test": "npm --workspaces --if-present run test",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "check:figures": "node scripts/check-figure-assets.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run check:figures && npm run build",
     "tunnel": "npm run build && cross-env PaperForge_TUNNEL=localtunnel node apps/backend/src/index.js",
     "tunnel:cf": "npm run build && cross-env PaperForge_TUNNEL=cloudflared node apps/backend/src/index.js",
     "tunnel:ngrok": "npm run build && cross-env PaperForge_TUNNEL=ngrok node apps/backend/src/index.js"
