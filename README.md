@@ -59,6 +59,9 @@
 <a href="docs/ARCHITECTURE.md" target="_self">
   <img alt="Architecture" src="https://img.shields.io/badge/🏗️-Architecture-blueviolet?style=for-the-badge" />
 </a>
+<a href="docs/FIGURE_AGENT.md" target="_self">
+  <img alt="Figure Agent" src="https://img.shields.io/badge/🧩-Figure_Agent-success?style=for-the-badge" />
+</a>
 <a href="#wechat-group" target="_self">
   <img alt="WeChat" src="https://img.shields.io/badge/💬-WeChat_Group-07C160?style=for-the-badge" />
 </a>

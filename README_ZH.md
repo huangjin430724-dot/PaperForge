@@ -49,6 +49,7 @@
 [![贡献指南](https://img.shields.io/badge/🤝-贡献指南-purple?style=for-the-badge)](#-贡献指南)
 [![更新日志](https://img.shields.io/badge/📝-更新日志-lightgrey?style=for-the-badge)](CHANGELOG.md)
 [![架构说明](https://img.shields.io/badge/🏗️-架构说明-blueviolet?style=for-the-badge)](docs/ARCHITECTURE.md)
+[![Figure Agent](https://img.shields.io/badge/🧩-Figure_Agent-success?style=for-the-badge)](docs/FIGURE_AGENT.md)
 <a href="#wechat-group" target="_self">
   <img alt="WeChat" src="https://img.shields.io/badge/💬-微信群-07C160?style=for-the-badge" />
 </a>

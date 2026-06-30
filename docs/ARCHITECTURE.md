@@ -82,6 +82,8 @@ figures/figure_report.md
 
 ## Figure Agent Workflow
 
+For step-by-step usage, see [Figure Agent Guide](FIGURE_AGENT.md).
+
 ```mermaid
 flowchart TD
   manuscript["Manuscript context"]
