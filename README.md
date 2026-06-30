@@ -716,6 +716,7 @@ npm run e2e
 npm run seed:demo
 npm run backup:data
 npm run release:bundle
+npm run release:notes
 npm run security:scan
 npm run build
 ```
@@ -740,6 +741,7 @@ npm run diagnostics:check
 npm run docs:check
 npm run maturity:check
 npm run deps:check
+npm run release:notes
 ```
 
 Before sharing a deployment or opening a support issue, run:

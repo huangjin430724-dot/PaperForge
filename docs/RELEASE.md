@@ -47,6 +47,21 @@ Verification checks:
 - Every listed SHA256 checksum matches.
 - Blocked local/private paths are absent.
 
+## Release Notes
+
+Generate GitHub-ready release notes from `CHANGELOG.md`:
+
+```bash
+npm run release:notes
+```
+
+The default source is the `Unreleased` section. Use a specific changelog heading when needed:
+
+```bash
+npm run release:notes -- --version "2026-06-30 - Figure Agent Maturity Release"
+npm --silent run release:notes -- --stdout
+```
+
 ## Suggested GitHub Release Flow
 
 1. Run the full quality gate:
@@ -62,6 +77,7 @@ Verification checks:
    ```bash
    npm run release:bundle
    npm run release:verify -- --file releases/PaperForge-0.1.0.tgz
+   npm run release:notes
    ```
 
 3. Attach both files to a GitHub release:
@@ -69,4 +85,4 @@ Verification checks:
    - `releases/PaperForge-0.1.0.tgz`
    - `releases/PaperForge-0.1.0.tgz.sha256`
 
-4. Copy notable changes from `CHANGELOG.md` into the release notes.
+4. Copy the generated release notes into the GitHub release description.

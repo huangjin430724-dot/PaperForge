@@ -24,6 +24,7 @@
     "restore:data": "node scripts/backup-data.mjs restore",
     "release:bundle": "node scripts/release-bundle.mjs create",
     "release:verify": "node scripts/release-bundle.mjs verify",
+    "release:notes": "node scripts/release-notes.mjs",
     "security:scan": "node scripts/security-scan.mjs",
     "doctor": "node scripts/doctor.mjs",
     "env:check": "node scripts/env-check.mjs",
@@ -33,7 +34,7 @@
     "maturity:check": "node scripts/maturity-check.mjs",
     "deps:check": "node scripts/dependency-check.mjs",
     "check:figures": "node scripts/check-figure-assets.mjs",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run check:figures && npm run docs:check && npm run env:check && npm run deps:check && npm run diagnostics:check && npm run maturity:check && npm run security:scan && npm run build",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run check:figures && npm run docs:check && npm run env:check && npm run deps:check && npm run diagnostics:check && npm run maturity:check && npm run release:notes -- --out-dir .tmp/release-notes-check && npm run security:scan && npm run build",
     "tunnel": "npm run build && cross-env PaperForge_TUNNEL=localtunnel node apps/backend/src/index.js",
     "tunnel:cf": "npm run build && cross-env PaperForge_TUNNEL=cloudflared node apps/backend/src/index.js",
     "tunnel:ngrok": "npm run build && cross-env PaperForge_TUNNEL=ngrok node apps/backend/src/index.js"

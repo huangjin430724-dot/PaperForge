@@ -86,6 +86,7 @@ function checkWorkflow() {
     'npm run diagnostics:check',
     'npm run release:bundle',
     'npm run release:verify',
+    'npm run release:notes',
     'npm run build',
     'npm run e2e'
   ];
@@ -147,12 +148,14 @@ requireScripts('Quality gate scripts', [
   'diagnostics',
   'diagnostics:check',
   'security:scan',
+  'release:notes',
   'doctor'
 ]);
 
 requireScripts('Release and data lifecycle scripts', [
   'release:bundle',
   'release:verify',
+  'release:notes',
   'seed:demo',
   'backup:data',
   'restore:data'

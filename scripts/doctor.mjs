@@ -79,6 +79,7 @@ function checkFiles() {
     'scripts/dependency-check.mjs',
     'scripts/env-check.mjs',
     'scripts/diagnostics.mjs',
+    'scripts/release-notes.mjs',
     'scripts/validate-diagnostics.mjs',
     'scripts/check-figure-assets.mjs'
   ];
@@ -95,7 +96,7 @@ function checkPackageScripts() {
   const pkg = readJson('package.json');
   if (!pkg) return;
   const scripts = pkg.scripts || {};
-  const requiredScripts = ['dev', 'start', 'build', 'typecheck', 'lint', 'test', 'doctor', 'env:check', 'diagnostics', 'diagnostics:check', 'docs:check', 'maturity:check', 'deps:check', 'check:figures', 'check'];
+  const requiredScripts = ['dev', 'start', 'build', 'typecheck', 'lint', 'test', 'doctor', 'env:check', 'diagnostics', 'diagnostics:check', 'docs:check', 'maturity:check', 'deps:check', 'release:notes', 'check:figures', 'check'];
   for (const script of requiredScripts) {
     if (!scripts[script]) errors.push(`package.json missing script: ${script}`);
   }
