@@ -1,0 +1,14 @@
+.git
+.github
+node_modules
+apps/frontend/dist
+data
+*.log
+npm-debug.log*
+.env
+.env.*
+outputs
+brand-backup-*
+**/*.bak
+**/*.before-*
+**/*backup*

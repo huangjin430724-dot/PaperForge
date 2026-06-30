@@ -1,0 +1,18 @@
+services:
+  paperforge:
+    build:
+      context: .
+    image: paperforge:local
+    ports:
+      - "8787:8787"
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      PaperForge_TUNNEL: "false"
+      PaperForge_DATA_DIR: /app/data
+    volumes:
+      - paperforge-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  paperforge-data:

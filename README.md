@@ -341,6 +341,18 @@ npm run build
 npm start
 ```
 
+#### Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Access:
+- **PaperForge**: http://localhost:8787
+- **Data volume**: `paperforge-data`
+
+> The default Docker image is intended for quick evaluation and self-hosted web service deployment. For PDF compilation inside the container, extend the image with TexLive or Tectonic.
+
 #### Complete Linux Server Deployment Example
 
 ```bash

@@ -8,6 +8,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 
 ### Added
 
+- Dockerfile, Docker Compose configuration, and `.dockerignore` for one-command self-hosted deployment.
 - MIT `LICENSE`, `SECURITY.md`, and `SUPPORT.md` community health files.
 - GitHub Actions CI workflow for lint, tests, typecheck, Figure Agent asset checks, and production build.
 - GitHub issue templates for bug reports, feature requests, and Figure Agent feedback.

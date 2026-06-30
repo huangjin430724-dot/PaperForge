@@ -417,6 +417,18 @@ npm run build
 npm start
 ```
 
+#### Docker Compose 一键运行
+
+```bash
+docker compose up --build
+```
+
+启动后访问：
+- **PaperForge**：http://localhost:8787
+- **数据卷**：`paperforge-data`
+
+> Docker 镜像默认用于快速体验和自托管 Web 服务。若需要在容器内完成 PDF 编译，请基于该镜像扩展安装 TexLive 或 Tectonic。
+
 #### Linux 服务器完整部署示例
 
 ```bash
