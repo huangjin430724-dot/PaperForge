@@ -43,6 +43,13 @@ jobs:
       - name: Check seeded demo figure assets
         run: node scripts/check-figure-assets.mjs .tmp/ci-demo/demo-paperforge-showcase --require
 
+      - name: Backup and restore seeded demo data
+        run: |
+          npm run backup:data -- --data-dir .tmp/ci-demo --out .tmp/ci-demo-backup.tgz
+          node scripts/backup-data.mjs list --file .tmp/ci-demo-backup.tgz
+          npm run restore:data -- --file .tmp/ci-demo-backup.tgz --data-dir .tmp/ci-demo-restored --replace
+          node scripts/check-figure-assets.mjs .tmp/ci-demo-restored/demo-paperforge-showcase --require
+
       - name: Build
         run: npm run build
 

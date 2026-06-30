@@ -68,6 +68,9 @@
 <a href="docs/DEMO_PROJECT.md" target="_self">
   <img alt="Demo Project" src="https://img.shields.io/badge/🎬-Demo_Project-ffcf99?style=for-the-badge" />
 </a>
+<a href="docs/DATA_BACKUP.md" target="_self">
+  <img alt="Backup" src="https://img.shields.io/badge/💾-Backup_&_Restore-8bd3dd?style=for-the-badge" />
+</a>
 <a href="#wechat-group" target="_self">
   <img alt="WeChat" src="https://img.shields.io/badge/💬-WeChat_Group-07C160?style=for-the-badge" />
 </a>
@@ -699,6 +702,7 @@ npm run check
 npm run check:figures
 npm run e2e
 npm run seed:demo
+npm run backup:data
 npm run build
 ```
 

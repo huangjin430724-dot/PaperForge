@@ -33,6 +33,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 - Docker / Docker Compose deployment.
 - `.env.example` configuration template.
 - Project Doctor via `npm run doctor`.
+- Data backup and restore workflow for `PaperForge_DATA_DIR`.
 - Issue templates, PR template, contribution guide, support policy, security policy, MIT license.
 - Architecture guide, Figure Agent guide, changelog, and release notes.
 
@@ -55,7 +56,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 
 - Add optional Docker image variants with TexLive or Tectonic.
 - Add health endpoint details for deployment monitoring.
-- Add backup / restore documentation for `PaperForge_DATA_DIR`.
+- Add deployment health endpoint details and restore checklists for hosted instances.
 
 ## Later
 

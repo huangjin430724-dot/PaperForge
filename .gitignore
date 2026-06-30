@@ -18,6 +18,7 @@ AGENTS.md
 brand-backup-*/
 outputs/
 reports/
+backups/
 .tmp/
 test-results/
 playwright-report/
