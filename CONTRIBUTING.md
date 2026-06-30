@@ -43,6 +43,7 @@ Please include:
 - The user workflow affected.
 - Commands you ran for verification.
 - Screenshots or generated artifact paths for UI and Figure Agent changes.
+- A `CHANGELOG.md` entry for notable user-facing or workflow changes.
 
 ## Issues
 

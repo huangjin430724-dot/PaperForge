@@ -51,6 +51,9 @@
 <a href="#-contributing" target="_self">
   <img alt="Contributing" src="https://img.shields.io/badge/🤝-Contributing-purple?style=for-the-badge" />
 </a>
+<a href="CHANGELOG.md" target="_self">
+  <img alt="Changelog" src="https://img.shields.io/badge/📝-Changelog-lightgrey?style=for-the-badge" />
+</a>
 <a href="#wechat-group" target="_self">
   <img alt="WeChat" src="https://img.shields.io/badge/💬-WeChat_Group-07C160?style=for-the-badge" />
 </a>
@@ -650,6 +653,7 @@ Welcome to submit Issues or PRs:
 4. Submit a PR
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines. Before opening a PR, run the full quality gate when possible:
+For larger feature changes, update [CHANGELOG.md](CHANGELOG.md).
 
 Development commands:
 ```bash

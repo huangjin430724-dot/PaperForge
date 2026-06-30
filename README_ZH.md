@@ -45,6 +45,7 @@
 [![快速开始](https://img.shields.io/badge/📖-快速开始-blue?style=for-the-badge)](#-快速开始)
 [![功能概览](https://img.shields.io/badge/✨-功能概览-orange?style=for-the-badge)](#-核心功能)
 [![贡献指南](https://img.shields.io/badge/🤝-贡献指南-purple?style=for-the-badge)](#-贡献指南)
+[![更新日志](https://img.shields.io/badge/📝-更新日志-lightgrey?style=for-the-badge)](CHANGELOG.md)
 <a href="#wechat-group" target="_self">
   <img alt="WeChat" src="https://img.shields.io/badge/💬-微信群-07C160?style=for-the-badge" />
 </a>
@@ -727,6 +728,7 @@ PaperForge/
 4. 发起 PR
 
 详细规范见 [CONTRIBUTING.md](CONTRIBUTING.md)。提交 PR 前建议运行完整质量门禁：
+较大的功能变更请同步更新 [CHANGELOG.md](CHANGELOG.md)。
 
 开发命令：
 ```bash
