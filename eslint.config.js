@@ -22,7 +22,7 @@ export default [
   },
   js.configs.recommended,
   {
-    files: ['*.js', 'apps/backend/src/**/*.js'],
+    files: ['*.js', 'apps/backend/src/**/*.js', 'scripts/**/*.mjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

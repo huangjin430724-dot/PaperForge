@@ -7,6 +7,7 @@
 ### PaperForge — Vibe Writing for Academia
 
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![CI](https://github.com/huangjin430724-dot/PaperForge/actions/workflows/ci.yml/badge.svg)](https://github.com/huangjin430724-dot/PaperForge/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/network/members)

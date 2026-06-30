@@ -7,6 +7,7 @@
 ### PaperForge - 氛围写作平台
 
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![CI](https://github.com/huangjin430724-dot/PaperForge/actions/workflows/ci.yml/badge.svg)](https://github.com/huangjin430724-dot/PaperForge/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/network/members)
@@ -139,6 +140,7 @@ PaperForge 是一个面向学术写作的本地部署 LaTeX + AI 工作台，强
 - **图示报告导出**：一键生成 `figures/figure_report.md`，汇总图示清单、QA 分数、caption、label 和可复制的 LaTeX 代码
 - **离线演示资产**：无需调用 API 即可生成一套 Figure Agent 示例资产，包含 SVG、图包、QA、索引和报告，便于首次体验与项目汇报
 - **图示资产质量门禁**：通过 `npm run check:figures` 校验图示索引、SVG、图包、QA 报告和导出报告之间的一致性
+- **CI 自动化检查**：GitHub Actions 自动运行 lint、test、typecheck、图示资产检查和生产构建
 - **智能识别**：公式与图表结构自动识别
 
 ### 📝 同行评审
