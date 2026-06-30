@@ -15,7 +15,7 @@
     "@langchain/langgraph": "~0.2.74",
     "@langchain/openai": "~0.3.16",
     "@ngrok/ngrok": "^1.4.1",
-    "diff": "^5.2.0",
+    "diff": "^9.0.0",
     "fast-xml-parser": "^4.4.1",
     "fastify": "^4.26.2",
     "langchain": "~0.3.37",
