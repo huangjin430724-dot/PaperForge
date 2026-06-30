@@ -5330,6 +5330,7 @@ export default function EditorPage() {
     await writeFileCompat(registryPath, content);
     setFiles((prev) => ({ ...prev, [registryPath]: content }));
     setPaperFigureRegistry(nextRegistry);
+    return nextRegistry;
   };
 
   const loadPaperFigureRegistry = async () => {
@@ -5368,6 +5369,145 @@ export default function EditorPage() {
       await refreshTree();
     } catch (err) {
       setPlotStatus(t('导出失败: {{error}}', { error: String(err) }));
+    } finally {
+      setPlotBusy(false);
+    }
+  };
+
+  const createPaperFigureDemoAssets = async () => {
+    if (!projectId) return;
+    setPlotBusy(true);
+    setPlotStatus('');
+    setPaperFigureQa(null);
+    try {
+      const now = new Date().toISOString();
+      const activeFileForDemo = mainFile || activePath || 'main.tex';
+      const demoPlan: PaperFigurePlan = {
+        version: 1,
+        source: 'scientific-figure-planner-demo',
+        generatedAt: now,
+        activeFile: activeFileForDemo,
+        manuscriptSummary: 'Demo plan for the PaperForge scientific figure workflow.',
+        recommendedFigures: [
+          {
+            id: 'demo-system-overview',
+            skill: 'system_overview',
+            title: 'PaperForge Figure Agent Workflow',
+            target_section: 'System Overview',
+            purpose: 'Show the full lifecycle from manuscript context to reusable figure assets.',
+            why_it_matters: 'This figure demonstrates planning, generation, QA, indexing, and report export in one visual workflow.',
+            caption: 'Overview of the PaperForge Figure Agent workflow from manuscript-aware planning to reusable figure assets.',
+            label: 'fig:paperforge-figure-agent-demo',
+            key_elements: ['Manuscript Context', 'Figure Planner', 'SVG Renderer', 'Figure QA', 'Asset Registry', 'Report Export'],
+            risks: ['Demo content should be replaced with paper-specific content before submission.']
+          }
+        ]
+      };
+      const demoSpec = normalizeFigureSpec({
+        skill: 'system_overview',
+        title: 'PaperForge Figure Agent Workflow',
+        caption: demoPlan.recommendedFigures[0].caption,
+        label: demoPlan.recommendedFigures[0].label,
+        design_notes: [
+          'Demonstrates the complete scientific figure workflow.',
+          'Useful as an offline demo when API access is unavailable.'
+        ],
+        nodes: [
+          { id: 'context', label: 'Manuscript Context', type: 'input' },
+          { id: 'planner', label: 'Figure Planner', type: 'process' },
+          { id: 'renderer', label: 'Skill-aware Renderer', type: 'process' },
+          { id: 'qa', label: 'Figure QA', type: 'process' },
+          { id: 'registry', label: 'Asset Registry', type: 'storage' },
+          { id: 'report', label: 'Report Export', type: 'output' }
+        ],
+        edges: [
+          { from: 'context', to: 'planner', label: 'read' },
+          { from: 'planner', to: 'renderer', label: 'spec' },
+          { from: 'renderer', to: 'qa', label: 'SVG' },
+          { from: 'qa', to: 'registry', label: 'score' },
+          { from: 'registry', to: 'report', label: 'reuse' }
+        ]
+      }, 'system_overview');
+      const assetPath = 'figures/demo_paperforge_figure_agent.svg';
+      const packagePath = 'figures/demo_paperforge_figure_agent.figure.json';
+      const qaPath = 'figures/demo_paperforge_figure_agent.figure.qa.json';
+      const planPath = 'figures/figure_plan.json';
+      const svg = renderPaperFigureSvg(demoSpec);
+      const packageContent = JSON.stringify({
+        version: 1,
+        source: 'scientific-figure-demo',
+        generatedAt: now,
+        skill: demoSpec.skill,
+        skillLabel: SCIENTIFIC_FIGURE_SKILLS.system_overview.label,
+        adoptedPlan: demoPlan.recommendedFigures[0],
+        activeFile: activeFileForDemo,
+        assetPath,
+        latex: {
+          includegraphics: `\\includegraphics[width=0.95\\linewidth]{${assetPath}}`,
+          caption: demoSpec.caption,
+          label: demoSpec.label
+        },
+        spec: demoSpec
+      }, null, 2);
+      const qaReport: PaperFigureQaReport = {
+        version: 1,
+        source: 'scientific-figure-qa-demo',
+        generatedAt: now,
+        assetPath,
+        packagePath,
+        overall_score: 92,
+        verdict: 'ready',
+        summary: 'Demo figure clearly communicates the Figure Agent workflow and generated asset lifecycle.',
+        strengths: ['Shows the full workflow', 'Includes reusable artifacts', 'Suitable for project demonstration'],
+        issues: [
+          {
+            severity: 'info',
+            area: 'content',
+            issue: 'Demo content is generic.',
+            fix: 'Regenerate with the target paper context before final submission.'
+          }
+        ],
+        recommended_caption: demoSpec.caption || '',
+        revision_prompt: 'Regenerate this system overview with the concrete method modules and paper-specific terminology.'
+      };
+      await writeFileCompat(planPath, JSON.stringify(demoPlan, null, 2));
+      await writeFileCompat(assetPath, svg);
+      await writeFileCompat(packagePath, packageContent);
+      await writeFileCompat(qaPath, JSON.stringify(qaReport, null, 2));
+      setFiles((prev) => ({
+        ...prev,
+        [planPath]: JSON.stringify(demoPlan, null, 2),
+        [assetPath]: svg,
+        [packagePath]: packageContent,
+        [qaPath]: JSON.stringify(qaReport, null, 2)
+      }));
+      setPaperFigurePlan(demoPlan);
+      setSelectedPaperFigurePlanId(demoPlan.recommendedFigures[0].id);
+      setPaperFigureSkill('system_overview');
+      setPaperFigureQa(qaReport);
+      const registry = await updatePaperFigureRegistry({
+        assetPath,
+        packagePath,
+        qaPath,
+        title: demoSpec.title || 'PaperForge Figure Agent Workflow',
+        caption: demoSpec.caption || '',
+        label: demoSpec.label || '',
+        skill: demoSpec.skill || 'system_overview',
+        skillLabel: SCIENTIFIC_FIGURE_SKILLS.system_overview.label,
+        activeFile: activeFileForDemo,
+        generatedAt: now,
+        updatedAt: now,
+        qaScore: qaReport.overall_score,
+        qaVerdict: qaReport.verdict
+      });
+      const report = buildPaperFigureReport(registry);
+      await writeFileCompat('figures/figure_report.md', report);
+      setFiles((prev) => ({ ...prev, 'figures/figure_report.md': report }));
+      setPlotAssetPath(assetPath);
+      setPlotStatus(t('示例图示资产已生成 · 包含 SVG、figure package、QA、索引和报告'));
+      await refreshTree();
+    } catch (err) {
+      setPlotStatus(t('示例生成失败: {{error}}', { error: String(err) }));
     } finally {
       setPlotBusy(false);
     }
@@ -8278,6 +8418,9 @@ ${prompt}` : ''
                       </button>
                       <button className="btn ghost" onClick={exportPaperFigureReport} disabled={plotBusy}>
                         {t('导出图示报告')}
+                      </button>
+                      <button className="btn ghost" onClick={createPaperFigureDemoAssets} disabled={plotBusy}>
+                        {t('生成演示资产')}
                       </button>
                     </div>
                     <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，先生成 figure_plan.json 候选方案，再按科研图示 Skill 生成 SVG、.figure.json 和 .figure.qa.json 图示包。')}</div>
