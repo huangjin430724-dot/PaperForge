@@ -8,6 +8,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 
 ### Added
 
+- MIT `LICENSE`, `SECURITY.md`, and `SUPPORT.md` community health files.
 - GitHub Actions CI workflow for lint, tests, typecheck, Figure Agent asset checks, and production build.
 - GitHub issue templates for bug reports, feature requests, and Figure Agent feedback.
 - Pull request template with verification checklist and Figure Agent artifact fields.

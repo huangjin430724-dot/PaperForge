@@ -9,6 +9,8 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![CI](https://github.com/huangjin430724-dot/PaperForge/actions/workflows/ci.yml/badge.svg)](https://github.com/huangjin430724-dot/PaperForge/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Security](https://img.shields.io/badge/security-policy-important.svg)](SECURITY.md)
+[![Support](https://img.shields.io/badge/support-guide-informational.svg)](SUPPORT.md)
 [![GitHub Stars](https://img.shields.io/github/stars/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/network/members)
 [![GitHub Issues](https://img.shields.io/github/issues/OpenDCAI/PaperForge)](https://github.com/OpenDCAI/PaperForge/issues)
@@ -654,6 +656,7 @@ Welcome to submit Issues or PRs:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines. Before opening a PR, run the full quality gate when possible:
 For larger feature changes, update [CHANGELOG.md](CHANGELOG.md).
+For security reports, see [SECURITY.md](SECURITY.md). For support guidance, see [SUPPORT.md](SUPPORT.md). Do not post API keys, private manuscripts, or collaboration tokens in public issues.
 
 Development commands:
 ```bash

@@ -9,6 +9,8 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![CI](https://github.com/huangjin430724-dot/PaperForge/actions/workflows/ci.yml/badge.svg)](https://github.com/huangjin430724-dot/PaperForge/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Security](https://img.shields.io/badge/security-policy-important.svg)](SECURITY.md)
+[![Support](https://img.shields.io/badge/support-guide-informational.svg)](SUPPORT.md)
 [![GitHub Stars](https://img.shields.io/github/stars/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/network/members)
 [![GitHub Issues](https://img.shields.io/github/issues/OpenDCAI/PaperForge)](https://github.com/OpenDCAI/PaperForge/issues)
@@ -729,6 +731,7 @@ PaperForge/
 
 详细规范见 [CONTRIBUTING.md](CONTRIBUTING.md)。提交 PR 前建议运行完整质量门禁：
 较大的功能变更请同步更新 [CHANGELOG.md](CHANGELOG.md)。
+安全问题请参考 [SECURITY.md](SECURITY.md)，使用问题请参考 [SUPPORT.md](SUPPORT.md)。请勿在公开 Issue 中粘贴 API Key、私有论文或协作令牌。
 
 开发命令：
 ```bash
