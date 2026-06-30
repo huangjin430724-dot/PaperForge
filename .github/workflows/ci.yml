@@ -40,6 +40,9 @@ jobs:
       - name: Security scan
         run: npm run security:scan
 
+      - name: Validate diagnostics bundle
+        run: npm run diagnostics:check
+
       - name: Seed demo project
         run: PaperForge_DATA_DIR=.tmp/ci-demo npm run seed:demo
 

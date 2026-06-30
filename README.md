@@ -707,6 +707,7 @@ npm run dev:frontend
 npm run dev:backend
 npm run check
 npm run check:figures
+npm run diagnostics:check
 npm run e2e
 npm run seed:demo
 npm run backup:data
@@ -731,6 +732,7 @@ For command-line support bundles:
 npm run diagnostics
 npm --silent run diagnostics -- --stdout
 npm run diagnostics -- --out-dir .tmp/diagnostics
+npm run diagnostics:check
 ```
 
 ---

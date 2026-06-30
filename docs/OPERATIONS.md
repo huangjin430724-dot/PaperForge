@@ -43,6 +43,12 @@ Use stdout mode for CI logs or support forms:
 npm --silent run diagnostics -- --stdout
 ```
 
+Validate the diagnostics schema and redaction rules:
+
+```bash
+npm run diagnostics:check
+```
+
 Typical response:
 
 ```json
@@ -75,6 +81,7 @@ Before sharing, deploying, or backing up an instance:
 ```bash
 npm run doctor
 npm run check:figures
+npm run diagnostics:check
 npm run test
 npm run e2e
 ```

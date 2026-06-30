@@ -16,6 +16,7 @@
 - [ ] `npm run lint`
 - [ ] `npm run test`
 - [ ] `npm run check:figures`
+- [ ] `npm run diagnostics:check`
 - [ ] `npm run build`
 
 ## Figure Agent assets

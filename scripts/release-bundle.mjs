@@ -30,6 +30,7 @@ const REQUIRED_FILES = [
   'docs/RELEASE.md',
   'scripts/doctor.mjs',
   'scripts/diagnostics.mjs',
+  'scripts/validate-diagnostics.mjs',
   'scripts/check-figure-assets.mjs',
   'scripts/seed-demo-project.mjs',
   'scripts/backup-data.mjs',

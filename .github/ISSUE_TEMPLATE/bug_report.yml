@@ -46,6 +46,12 @@ body:
       label: Environment
       placeholder: Windows 11, Node 20, Chrome 126, PaperForge commit ...
   - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics bundle
+      description: Run `npm --silent run diagnostics -- --stdout` and paste the sanitized JSON here. Do not paste API keys or private manuscript content.
+      render: json
+  - type: textarea
     id: logs
     attributes:
       label: Logs / screenshots
