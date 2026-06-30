@@ -17,6 +17,7 @@
 - [ ] `npm run test`
 - [ ] `npm run check:figures`
 - [ ] `npm run docs:check`
+- [ ] `npm run deps:check`
 - [ ] `npm run env:check`
 - [ ] `npm run diagnostics:check`
 - [ ] `npm run maturity:check`

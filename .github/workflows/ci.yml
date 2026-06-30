@@ -40,6 +40,9 @@ jobs:
       - name: Check documentation links
         run: npm run docs:check
 
+      - name: Check dependency metadata
+        run: npm run deps:check
+
       - name: Validate environment template
         run: npm run env:check
 

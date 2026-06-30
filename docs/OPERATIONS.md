@@ -67,6 +67,12 @@ Validate the repository maturity scorecard:
 npm run maturity:check
 ```
 
+Validate workspace dependency metadata and lockfile consistency:
+
+```bash
+npm run deps:check
+```
+
 Typical response:
 
 ```json
@@ -100,6 +106,7 @@ Before sharing, deploying, or backing up an instance:
 npm run doctor
 npm run check:figures
 npm run docs:check
+npm run deps:check
 npm run env:check
 npm run diagnostics:check
 npm run maturity:check

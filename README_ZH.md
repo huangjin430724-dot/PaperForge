@@ -769,6 +769,7 @@ npm run dev:backend
 npm run check
 npm run check:figures
 npm run docs:check
+npm run deps:check
 npm run env:check
 npm run diagnostics:check
 npm run maturity:check
@@ -799,6 +800,7 @@ npm run diagnostics -- --out-dir .tmp/diagnostics
 npm run diagnostics:check
 npm run docs:check
 npm run maturity:check
+npm run deps:check
 ```
 
 分享部署或反馈问题前，建议运行：
