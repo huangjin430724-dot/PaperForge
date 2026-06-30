@@ -23,6 +23,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 - `npm run maturity:check` for repository maturity scorecard validation.
 - `npm run deps:check` for workspace dependency, lockfile, and CI install policy validation.
 - `npm run release:notes` for GitHub-ready release notes generated from `CHANGELOG.md`.
+- `npm run status:report` for Markdown project status snapshots covering maturity, docs, dependencies, environment, and diagnostics.
 - `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.

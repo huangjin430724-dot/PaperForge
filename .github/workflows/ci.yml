@@ -55,6 +55,9 @@ jobs:
       - name: Check project maturity
         run: npm run maturity:check
 
+      - name: Generate project status report
+        run: npm run status:report -- --out-dir .tmp/status-report
+
       - name: Generate release notes
         run: npm run release:notes -- --out-dir .tmp/release-notes
 

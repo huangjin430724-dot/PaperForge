@@ -84,6 +84,7 @@ function checkWorkflow() {
     'npm run env:check',
     'npm run security:scan',
     'npm run diagnostics:check',
+    'npm run status:report',
     'npm run release:bundle',
     'npm run release:verify',
     'npm run release:notes',
@@ -148,6 +149,7 @@ requireScripts('Quality gate scripts', [
   'diagnostics',
   'diagnostics:check',
   'security:scan',
+  'status:report',
   'release:notes',
   'doctor'
 ]);

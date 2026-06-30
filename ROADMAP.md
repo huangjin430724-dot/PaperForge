@@ -45,6 +45,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 - Repository maturity scorecard covering community, docs, CI, operations, release, and lifecycle checks.
 - Dependency metadata and lockfile consistency checks in local quality gates and CI.
 - Changelog-driven release notes generation for GitHub release preparation.
+- Markdown project status snapshots for reporting, handoff, and maintenance reviews.
 - Issue templates, PR template, contribution guide, support policy, security policy, MIT license.
 - Architecture guide, Figure Agent guide, changelog, and release notes.
 

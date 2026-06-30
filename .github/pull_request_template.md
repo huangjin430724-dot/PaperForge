@@ -21,6 +21,7 @@
 - [ ] `npm run env:check`
 - [ ] `npm run diagnostics:check`
 - [ ] `npm run maturity:check`
+- [ ] `npm run status:report -- --out-dir .tmp/status-report-check`
 - [ ] `npm run release:notes -- --out-dir .tmp/release-notes-check`
 - [ ] `npm run build`
 

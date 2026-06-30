@@ -712,6 +712,7 @@ npm run deps:check
 npm run env:check
 npm run diagnostics:check
 npm run maturity:check
+npm run status:report
 npm run e2e
 npm run seed:demo
 npm run backup:data
@@ -740,6 +741,7 @@ npm run diagnostics -- --out-dir .tmp/diagnostics
 npm run diagnostics:check
 npm run docs:check
 npm run maturity:check
+npm run status:report
 npm run deps:check
 npm run release:notes
 ```

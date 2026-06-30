@@ -67,6 +67,12 @@ Validate the repository maturity scorecard:
 npm run maturity:check
 ```
 
+Generate a Markdown project status snapshot:
+
+```bash
+npm run status:report
+```
+
 Validate workspace dependency metadata and lockfile consistency:
 
 ```bash
@@ -110,6 +116,7 @@ npm run deps:check
 npm run env:check
 npm run diagnostics:check
 npm run maturity:check
+npm run status:report
 npm run test
 npm run e2e
 ```
