@@ -19,7 +19,7 @@ The readiness endpoint checks:
 - Template manifest can be parsed.
 - Project and template counts can be reported.
 
-The endpoint intentionally does not expose the absolute local data directory path.
+The endpoint intentionally does not expose the absolute local data directory path. The project workspace also exposes the same readiness information through the `系统状态` / system status panel, so non-technical users can check runtime health without using `curl`.
 
 Example:
 

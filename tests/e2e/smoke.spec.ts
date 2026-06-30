@@ -47,4 +47,14 @@ test.describe('PaperForge smoke flows', () => {
     await expect(page.getByText(/编辑器|Editor/i).first()).toBeVisible();
     await expect(page.getByText(/预览|Preview/i).first()).toBeVisible();
   });
+
+  test('project workspace exposes a system status panel', async ({ page }) => {
+    await page.goto('/projects');
+    await page.getByTestId('project-health-button').click();
+    const modal = page.getByTestId('project-health-modal');
+    await expect(modal).toBeVisible();
+    await expect(modal.getByText(/Ready|Degraded/i)).toBeVisible();
+    await expect(modal.getByText('data-dir-writable')).toBeVisible();
+    await expect(modal.getByText('template-manifest-readable')).toBeVisible();
+  });
 });

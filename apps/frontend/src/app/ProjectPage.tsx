@@ -7,6 +7,7 @@ import {
   deleteProject,
   importArxivSSE,
   importZip,
+  getHealthReady,
   listProjects,
   listTemplates,
   renameProject,
@@ -16,7 +17,7 @@ import {
   permanentDeleteProject,
   uploadTemplate
 } from '../api/client';
-import type { ProjectMeta, TemplateMeta, TemplateCategory } from '../api/client';
+import type { HealthReadyReport, ProjectMeta, TemplateMeta, TemplateCategory } from '../api/client';
 import TransferPanel from './TransferPanel';
 
 type ViewFilter = 'all' | 'mine' | 'archived' | 'trash';
@@ -146,6 +147,10 @@ export default function ProjectPage() {
   // Settings modal state
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState<LLMSettings>(loadLLMSettings);
+  const [healthOpen, setHealthOpen] = useState(false);
+  const [healthBusy, setHealthBusy] = useState(false);
+  const [healthReport, setHealthReport] = useState<HealthReadyReport | null>(null);
+  const [healthError, setHealthError] = useState('');
 
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [galleryCat, setGalleryCat] = useState('all');
@@ -354,6 +359,25 @@ export default function ProjectPage() {
     }
   };
 
+  const loadHealthReport = useCallback(async () => {
+    setHealthBusy(true);
+    setHealthError('');
+    try {
+      const report = await getHealthReady();
+      setHealthReport(report);
+    } catch (err) {
+      setHealthError(String(err));
+      setHealthReport(null);
+    } finally {
+      setHealthBusy(false);
+    }
+  }, []);
+
+  const openHealthPanel = () => {
+    setHealthOpen(true);
+    loadHealthReport();
+  };
+
   const handleUploadTemplate = async (file: File) => {
     const baseName = file.name.replace(/\.zip$/i, '').replace(/[^a-zA-Z0-9_-]/g, '_');
     const templateId = baseName.toLowerCase();
@@ -544,6 +568,7 @@ export default function ProjectPage() {
                 </div>
               )}
             </div>
+            <button className="btn ghost" data-testid="project-health-button" onClick={openHealthPanel}>{t('系统状态')}</button>
             <button className="btn ghost" onClick={() => setSettingsOpen(true)}>{t('设置')}</button>
           </div>
         </header>
@@ -983,6 +1008,57 @@ export default function ProjectPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {healthOpen && (
+        <div className="modal-backdrop" onClick={() => setHealthOpen(false)}>
+          <div className="modal health-modal" data-testid="project-health-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>{t('系统状态')}</div>
+              <button className="icon-btn" onClick={() => setHealthOpen(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              {healthBusy && <div className="muted">{t('正在检查运行状态...')}</div>}
+              {healthError && <div className="status-bar"><div>{t('状态检查失败: {{error}}', { error: healthError })}</div></div>}
+              {healthReport && (
+                <>
+                  <div className={`health-summary ${healthReport.ok ? 'ok' : 'fail'}`}>
+                    <div>
+                      <div className="health-summary-title">{healthReport.ok ? t('Ready') : t('Degraded')}</div>
+                      <div className="muted">{t('Uptime')}: {healthReport.uptimeSeconds}s · Node {healthReport.node}</div>
+                    </div>
+                    <span className="health-pill">{healthReport.status}</span>
+                  </div>
+                  <div className="health-grid">
+                    <div className="health-metric">
+                      <span>{t('项目数据')}</span>
+                      <strong>{healthReport.dataDir.writable ? t('可写') : t('不可写')}</strong>
+                      <small>{t('项目数')}: {healthReport.dataDir.projectCount}</small>
+                    </div>
+                    <div className="health-metric">
+                      <span>{t('模板库')}</span>
+                      <strong>{healthReport.templates.manifest ? t('正常') : t('异常')}</strong>
+                      <small>{healthReport.templates.templateCount} templates · {healthReport.templates.categoryCount} categories</small>
+                    </div>
+                  </div>
+                  <div className="health-check-list">
+                    {healthReport.checks.map((check) => (
+                      <div key={check.name} className={`health-check ${check.status === 'ok' ? 'ok' : 'fail'}`}>
+                        <span>{check.name}</span>
+                        <strong>{check.status}</strong>
+                        {check.message && <small>{check.message}</small>}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button className="btn ghost" onClick={loadHealthReport} disabled={healthBusy}>{t('重新检查')}</button>
+              <button className="btn" onClick={() => setHealthOpen(false)}>{t('关闭')}</button>
+            </div>
+          </div>
         </div>
       )}
 

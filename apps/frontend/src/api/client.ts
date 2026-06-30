@@ -53,6 +53,31 @@ export interface ArxivPaper {
   arxivId: string;
 }
 
+export interface HealthCheckItem {
+  name: string;
+  status: 'ok' | 'fail' | string;
+  message?: string;
+}
+
+export interface HealthReadyReport {
+  ok: boolean;
+  status: 'ok' | 'degraded' | string;
+  timestamp: string;
+  uptimeSeconds: number;
+  node: string;
+  dataDir: {
+    exists: boolean;
+    writable: boolean;
+    projectCount: number;
+  };
+  templates: {
+    manifest: boolean;
+    templateCount: number;
+    categoryCount: number;
+  };
+  checks: HealthCheckItem[];
+}
+
 const API_BASE = '';
 const LANG_KEY = 'PaperForge-lang';
 const COLLAB_TOKEN_KEY = 'PaperForge-collab-token';
@@ -119,6 +144,10 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 export function listProjects() {
   return request<{ projects: ProjectMeta[] }>('/api/projects');
+}
+
+export function getHealthReady() {
+  return request<HealthReadyReport>('/api/health/ready');
 }
 
 export function createProject(payload: { name: string; template?: string }) {

@@ -722,6 +722,8 @@ curl http://localhost:8787/api/health/live
 curl http://localhost:8787/api/health/ready
 ```
 
+The project workspace also includes a system status panel that surfaces the readiness report without leaving the UI.
+
 ---
 
 ## 📄 License

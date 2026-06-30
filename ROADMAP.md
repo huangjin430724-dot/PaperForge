@@ -37,6 +37,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 - Liveness and readiness endpoints for deployment monitoring.
 - Release bundle generation with manifest and checksum verification.
 - Secret scanning and Dependabot dependency update configuration.
+- Workspace system status panel for readiness checks.
 - Issue templates, PR template, contribution guide, support policy, security policy, MIT license.
 - Architecture guide, Figure Agent guide, changelog, and release notes.
 
