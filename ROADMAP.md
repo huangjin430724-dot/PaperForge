@@ -42,6 +42,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 - Diagnostics schema/redaction validation in local checks and GitHub Actions.
 - Environment template and local deployment configuration validation.
 - Markdown link and README anchor validation in local checks and CI.
+- Repository maturity scorecard covering community, docs, CI, operations, release, and lifecycle checks.
 - Issue templates, PR template, contribution guide, support policy, security policy, MIT license.
 - Architecture guide, Figure Agent guide, changelog, and release notes.
 

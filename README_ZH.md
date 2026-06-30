@@ -771,6 +771,7 @@ npm run check:figures
 npm run docs:check
 npm run env:check
 npm run diagnostics:check
+npm run maturity:check
 npm run e2e
 npm run seed:demo
 npm run backup:data
@@ -797,6 +798,7 @@ npm --silent run diagnostics -- --stdout
 npm run diagnostics -- --out-dir .tmp/diagnostics
 npm run diagnostics:check
 npm run docs:check
+npm run maturity:check
 ```
 
 分享部署或反馈问题前，建议运行：

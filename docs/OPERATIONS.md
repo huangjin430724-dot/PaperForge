@@ -61,6 +61,12 @@ Validate local Markdown links and README anchors:
 npm run docs:check
 ```
 
+Validate the repository maturity scorecard:
+
+```bash
+npm run maturity:check
+```
+
 Typical response:
 
 ```json
@@ -96,6 +102,7 @@ npm run check:figures
 npm run docs:check
 npm run env:check
 npm run diagnostics:check
+npm run maturity:check
 npm run test
 npm run e2e
 ```

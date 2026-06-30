@@ -49,6 +49,9 @@ jobs:
       - name: Validate diagnostics bundle
         run: npm run diagnostics:check
 
+      - name: Check project maturity
+        run: npm run maturity:check
+
       - name: Seed demo project
         run: PaperForge_DATA_DIR=.tmp/ci-demo npm run seed:demo
 

@@ -19,6 +19,7 @@
 - [ ] `npm run docs:check`
 - [ ] `npm run env:check`
 - [ ] `npm run diagnostics:check`
+- [ ] `npm run maturity:check`
 - [ ] `npm run build`
 
 ## Figure Agent assets
