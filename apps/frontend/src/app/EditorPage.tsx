@@ -369,6 +369,28 @@ type PaperFigurePlan = {
   recommendedFigures: PaperFigurePlanItem[];
 };
 
+type PaperFigureQaIssue = {
+  severity: 'critical' | 'major' | 'minor' | 'info' | string;
+  area: string;
+  issue: string;
+  fix: string;
+};
+
+type PaperFigureQaReport = {
+  version: number;
+  source: string;
+  generatedAt: string;
+  assetPath: string;
+  packagePath: string;
+  overall_score: number;
+  verdict: 'ready' | 'revise' | 'regenerate' | string;
+  summary: string;
+  strengths: string[];
+  issues: PaperFigureQaIssue[];
+  recommended_caption: string;
+  revision_prompt: string;
+};
+
 interface PendingChange {
   filePath: string;
   original: string;
@@ -2045,6 +2067,37 @@ function normalizePaperFigurePlan(raw: any, activeFile: string): PaperFigurePlan
   };
 }
 
+function normalizePaperFigureQa(raw: any, assetPath: string, packagePath: string): PaperFigureQaReport {
+  const issues = Array.isArray(raw?.issues)
+    ? raw.issues
+        .map((item: any): PaperFigureQaIssue => ({
+          severity: String(item?.severity || 'minor').trim(),
+          area: String(item?.area || 'figure').trim(),
+          issue: String(item?.issue || '').trim(),
+          fix: String(item?.fix || '').trim()
+        }))
+        .filter((item: PaperFigureQaIssue) => item.issue && item.fix)
+        .slice(0, 10)
+    : [];
+  const score = Math.max(0, Math.min(100, Math.round(Number(raw?.overall_score ?? raw?.score ?? 75) || 75)));
+  const verdict = String(raw?.verdict || (score >= 85 && issues.every((item: PaperFigureQaIssue) => !['critical', 'major'].includes(item.severity)) ? 'ready' : 'revise')).trim();
+
+  return {
+    version: 1,
+    source: 'scientific-figure-qa',
+    generatedAt: new Date().toISOString(),
+    assetPath,
+    packagePath,
+    overall_score: score,
+    verdict,
+    summary: String(raw?.summary || 'Figure QA completed.').trim(),
+    strengths: normalizeStringArray(raw?.strengths).slice(0, 6),
+    issues,
+    recommended_caption: String(raw?.recommended_caption || raw?.recommendedCaption || '').trim(),
+    revision_prompt: String(raw?.revision_prompt || raw?.revisionPrompt || '').trim()
+  };
+}
+
 function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null, fallbackSkill: PaperFigureSkill = 'method_pipeline'): PaperFigureSpec {
   const skill = normalizePaperFigureSkill(raw?.skill || fallbackSkill);
   const preset = SCIENTIFIC_FIGURE_SKILLS[skill];
@@ -3026,6 +3079,7 @@ export default function EditorPage() {
   const [paperFigureSkill, setPaperFigureSkill] = useState<PaperFigureSkill>('method_pipeline');
   const [paperFigurePlan, setPaperFigurePlan] = useState<PaperFigurePlan | null>(null);
   const [selectedPaperFigurePlanId, setSelectedPaperFigurePlanId] = useState('');
+  const [paperFigureQa, setPaperFigureQa] = useState<PaperFigureQaReport | null>(null);
   const [plotBusy, setPlotBusy] = useState(false);
   const [plotStatus, setPlotStatus] = useState('');
   const [plotAssetPath, setPlotAssetPath] = useState('');
@@ -5124,6 +5178,7 @@ export default function EditorPage() {
     if (!projectId) return;
     setPlotBusy(true);
     setPlotStatus('');
+    setPaperFigureQa(null);
     try {
       const selectedPlan = planItem || paperFigurePlan?.recommendedFigures.find((item) => item.id === selectedPaperFigurePlanId);
       const selectedSkill = selectedPlan?.skill || paperFigureSkill;
@@ -5231,6 +5286,85 @@ export default function EditorPage() {
       }
     } catch (err) {
       setPlotStatus(t('生成失败: {{error}}', { error: String(err) }));
+    } finally {
+      setPlotBusy(false);
+    }
+  };
+
+  const handlePaperFigureQa = async () => {
+    if (!projectId) return;
+    if (!plotAssetPath) {
+      setPlotStatus(t('请先生成一张科研图示。'));
+      return;
+    }
+    setPlotBusy(true);
+    setPlotStatus('');
+    try {
+      const packagePath = plotAssetPath.replace(/\.svg$/i, '.figure.json');
+      const qaPath = plotAssetPath.replace(/\.svg$/i, '.figure.qa.json');
+      const sourcePath = mainFile || activePath;
+      const [svgContent, packageContent, sourceContent, projectContext] = await Promise.all([
+        ensureFileContent(plotAssetPath),
+        ensureFileContent(packagePath).catch(() => ''),
+        sourcePath ? ensureFileContent(sourcePath) : Promise.resolve(''),
+        buildProjectContext()
+      ]);
+      const res = await callLLM({
+        llmConfig,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a publication figure QA reviewer. ' +
+              'Assess whether a generated scientific figure is clear, faithful to the manuscript, LaTeX-ready, and useful for readers. ' +
+              'Return JSON only. Do not include Markdown.'
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              activeFile: sourcePath,
+              assetPath: plotAssetPath,
+              packagePath,
+              figurePackage: packageContent ? safeJsonParse<any>(packageContent) || packageContent.slice(0, 6000) : null,
+              svgPreview: svgContent.slice(0, 8000),
+              projectContext,
+              sourcePreview: sourceContent.slice(0, 8000),
+              outputSchema: {
+                overall_score: 0,
+                verdict: 'ready | revise | regenerate',
+                summary: 'short QA summary',
+                strengths: ['what works well'],
+                issues: [
+                  {
+                    severity: 'critical | major | minor | info',
+                    area: 'caption | content | layout | latex | faithfulness',
+                    issue: 'specific problem',
+                    fix: 'concrete fix'
+                  }
+                ],
+                recommended_caption: 'improved caption if needed',
+                revision_prompt: 'prompt to use for regenerating or improving the figure'
+              }
+            })
+          }
+        ]
+      });
+      if (!res.ok || !res.content) {
+        throw new Error(res.error || t('图示质量检查失败'));
+      }
+      const parsed = safeJsonParse<any>(extractJsonBlock(res.content) || res.content);
+      const report = normalizePaperFigureQa(parsed, plotAssetPath, packagePath);
+      const reportContent = JSON.stringify(report, null, 2);
+      await writeFileCompat(qaPath, reportContent);
+      setFiles((prev) => ({ ...prev, [qaPath]: reportContent }));
+      setPaperFigureQa(report);
+      setPlotStatus(t('图示质量检查完成 · {{score}}/100 · {{verdict}} · 已保存 QA 报告', {
+        score: report.overall_score,
+        verdict: report.verdict
+      }));
+      await refreshTree();
+    } catch (err) {
+      setPlotStatus(t('检查失败: {{error}}', { error: String(err) }));
     } finally {
       setPlotBusy(false);
     }
@@ -7837,9 +7971,31 @@ ${prompt}` : ''
                       <button className="btn ghost" onClick={() => handlePaperFigureGenerate()} disabled={plotBusy}>
                         {selectedPaperFigurePlanId ? t('按方案生成图示') : t('论文图示 Agent')}
                       </button>
+                      <button className="btn ghost" onClick={handlePaperFigureQa} disabled={plotBusy || !plotAssetPath}>
+                        {t('图示质量检查')}
+                      </button>
                     </div>
-                    <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，先生成 figure_plan.json 候选方案，再按科研图示 Skill 生成 SVG 和 .figure.json 图示包。')}</div>
+                    <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，先生成 figure_plan.json 候选方案，再按科研图示 Skill 生成 SVG、.figure.json 和 .figure.qa.json 图示包。')}</div>
                     {plotStatus && <div className="muted">{plotStatus}</div>}
+                    {paperFigureQa && (
+                      <div className="vision-result">
+                        <div className="muted">{t('Figure QA')}: {paperFigureQa.overall_score}/100 · {paperFigureQa.verdict}</div>
+                        <div>{paperFigureQa.summary}</div>
+                        {paperFigureQa.strengths.length > 0 && (
+                          <div className="muted">{t('优点')}: {paperFigureQa.strengths.join(' / ')}</div>
+                        )}
+                        {paperFigureQa.issues.slice(0, 3).map((issue, idx) => (
+                          <div key={`${issue.area}-${idx}`} className="muted">
+                            {issue.severity} · {issue.area}: {issue.issue} → {issue.fix}
+                          </div>
+                        ))}
+                        {paperFigureQa.revision_prompt && (
+                          <button className="btn ghost" onClick={() => setPlotPrompt(paperFigureQa.revision_prompt)}>
+                            {t('采用修改提示')}
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {plotAssetPath && (
                       <div className="vision-result">
                         <div className="muted">{t('预览')}</div>
