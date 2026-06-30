@@ -55,6 +55,12 @@ Validate `.env.example` and the local `.env` shape:
 npm run env:check
 ```
 
+Validate local Markdown links and README anchors:
+
+```bash
+npm run docs:check
+```
+
 Typical response:
 
 ```json
@@ -87,6 +93,7 @@ Before sharing, deploying, or backing up an instance:
 ```bash
 npm run doctor
 npm run check:figures
+npm run docs:check
 npm run env:check
 npm run diagnostics:check
 npm run test
