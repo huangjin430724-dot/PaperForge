@@ -8,6 +8,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 
 ### Added
 
+- `ROADMAP.md` with shipped capabilities, near-term plans, longer-term direction, and non-goals.
 - `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.

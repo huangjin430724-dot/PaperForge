@@ -11,10 +11,10 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/security-policy-important.svg)](SECURITY.md)
 [![Support](https://img.shields.io/badge/support-guide-informational.svg)](SUPPORT.md)
-[![GitHub Stars](https://img.shields.io/github/stars/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/network/members)
-[![GitHub Issues](https://img.shields.io/github/issues/OpenDCAI/PaperForge)](https://github.com/OpenDCAI/PaperForge/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/OpenDCAI/PaperForge)](https://github.com/OpenDCAI/PaperForge/pulls)
+[![GitHub Stars](https://img.shields.io/github/stars/huangjin430724-dot/PaperForge?style=social)](https://github.com/huangjin430724-dot/PaperForge/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/huangjin430724-dot/PaperForge?style=social)](https://github.com/huangjin430724-dot/PaperForge/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/huangjin430724-dot/PaperForge)](https://github.com/huangjin430724-dot/PaperForge/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/huangjin430724-dot/PaperForge)](https://github.com/huangjin430724-dot/PaperForge/pulls)
 
 [中文](README_ZH.md) | [English](README.md)
 
@@ -56,6 +56,9 @@
 <a href="CHANGELOG.md" target="_self">
   <img alt="Changelog" src="https://img.shields.io/badge/📝-Changelog-lightgrey?style=for-the-badge" />
 </a>
+<a href="ROADMAP.md" target="_self">
+  <img alt="Roadmap" src="https://img.shields.io/badge/🗺️-Roadmap-9cf?style=for-the-badge" />
+</a>
 <a href="docs/ARCHITECTURE.md" target="_self">
   <img alt="Architecture" src="https://img.shields.io/badge/🏗️-Architecture-blueviolet?style=for-the-badge" />
 </a>
@@ -72,7 +75,7 @@
 
 > [!WARNING]
 > 🚧 <strong>Template Transfer is under testing</strong><br>
-> The Template Transfer feature is currently in beta and may contain known or unknown bugs. If you encounter any issues, please report them via [Issues](https://github.com/OpenDCAI/PaperForge/issues).
+> The Template Transfer feature is currently in beta and may contain known or unknown bugs. If you encounter any issues, please report them via [Issues](https://github.com/huangjin430724-dot/PaperForge/issues).
 
 > [!TIP]
 > 🆕 <strong>2025-02 · Template Transfer (Dual Mode)</strong><br>
@@ -323,7 +326,7 @@ PaperForge requires a LaTeX engine to generate PDFs. Choose one of the following
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/OpenDCAI/PaperForge.git
+git clone https://github.com/huangjin430724-dot/PaperForge.git
 cd PaperForge
 
 # 2. Install dependencies
@@ -376,7 +379,7 @@ node --version  # Should show >= 18.0.0
 pdflatex --version  # Should show TexLive version
 
 # 4. Clone and deploy project
-git clone https://github.com/OpenDCAI/PaperForge.git
+git clone https://github.com/huangjin430724-dot/PaperForge.git
 cd PaperForge
 npm install
 npm run build
@@ -716,8 +719,8 @@ MIT License. See [LICENSE](LICENSE).
 
 **If this project helps you, please give us a ⭐️ Star!**
 
-[![GitHub stars](https://img.shields.io/github/stars/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/huangjin430724-dot/PaperForge?style=social)](https://github.com/huangjin430724-dot/PaperForge/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/huangjin430724-dot/PaperForge?style=social)](https://github.com/huangjin430724-dot/PaperForge/network/members)
 
 <br>
 
@@ -731,4 +734,3 @@ MIT License. See [LICENSE](LICENSE).
 </p>
 
 </div>
-

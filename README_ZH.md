@@ -11,10 +11,10 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/security-policy-important.svg)](SECURITY.md)
 [![Support](https://img.shields.io/badge/support-guide-informational.svg)](SUPPORT.md)
-[![GitHub Stars](https://img.shields.io/github/stars/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/network/members)
-[![GitHub Issues](https://img.shields.io/github/issues/OpenDCAI/PaperForge)](https://github.com/OpenDCAI/PaperForge/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/OpenDCAI/PaperForge)](https://github.com/OpenDCAI/PaperForge/pulls)
+[![GitHub Stars](https://img.shields.io/github/stars/huangjin430724-dot/PaperForge?style=social)](https://github.com/huangjin430724-dot/PaperForge/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/huangjin430724-dot/PaperForge?style=social)](https://github.com/huangjin430724-dot/PaperForge/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/huangjin430724-dot/PaperForge)](https://github.com/huangjin430724-dot/PaperForge/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/huangjin430724-dot/PaperForge)](https://github.com/huangjin430724-dot/PaperForge/pulls)
 
 [中文](README_ZH.md) | [English](README.md)
 
@@ -48,6 +48,7 @@
 [![功能概览](https://img.shields.io/badge/✨-功能概览-orange?style=for-the-badge)](#-核心功能)
 [![贡献指南](https://img.shields.io/badge/🤝-贡献指南-purple?style=for-the-badge)](#-贡献指南)
 [![更新日志](https://img.shields.io/badge/📝-更新日志-lightgrey?style=for-the-badge)](CHANGELOG.md)
+[![路线图](https://img.shields.io/badge/🗺️-路线图-9cf?style=for-the-badge)](ROADMAP.md)
 [![架构说明](https://img.shields.io/badge/🏗️-架构说明-blueviolet?style=for-the-badge)](docs/ARCHITECTURE.md)
 [![Figure Agent](https://img.shields.io/badge/🧩-Figure_Agent-success?style=for-the-badge)](docs/FIGURE_AGENT.md)
 <a href="#wechat-group" target="_self">
@@ -60,7 +61,7 @@
 
 > [!WARNING]
 > 🚧 <strong>模板转换功能仍在测试中</strong><br>
-> 模板转换（Template Transfer）功能目前处于测试阶段，可能存在已知或未知的 Bug。如遇到问题，欢迎在 [Issues](https://github.com/OpenDCAI/PaperForge/issues) 中反馈。
+> 模板转换（Template Transfer）功能目前处于测试阶段，可能存在已知或未知的 Bug。如遇到问题，欢迎在 [Issues](https://github.com/huangjin430724-dot/PaperForge/issues) 中反馈。
 
 > [!TIP]
 > 🆕 <strong>2025-02 · 模板转换（双模式）</strong><br>
@@ -395,7 +396,7 @@ PaperForge 需要 LaTeX 编译引擎来生成 PDF，请根据操作系统选择�
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/OpenDCAI/PaperForge.git
+git clone https://github.com/huangjin430724-dot/PaperForge.git
 cd PaperForge
 
 # 2. 安装依赖
@@ -448,7 +449,7 @@ node --version  # 应显示 >= 18.0.0
 pdflatex --version  # 应显示 TexLive 版本
 
 # 4. 克隆并部署项目
-git clone https://github.com/OpenDCAI/PaperForge.git
+git clone https://github.com/huangjin430724-dot/PaperForge.git
 cd PaperForge
 npm install
 npm run build
@@ -785,8 +786,8 @@ MIT License. See [LICENSE](LICENSE).
 
 **如果这个项目对你有帮助，请给我们一个 ⭐️ Star！**
 
-[![GitHub stars](https://img.shields.io/github/stars/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/OpenDCAI/PaperForge?style=social)](https://github.com/OpenDCAI/PaperForge/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/huangjin430724-dot/PaperForge?style=social)](https://github.com/huangjin430724-dot/PaperForge/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/huangjin430724-dot/PaperForge?style=social)](https://github.com/huangjin430724-dot/PaperForge/network/members)
 
 <br>
 
@@ -800,4 +801,3 @@ MIT License. See [LICENSE](LICENSE).
 </p>
 
 </div>
-
