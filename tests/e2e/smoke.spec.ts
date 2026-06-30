@@ -1,6 +1,27 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('PaperForge smoke flows', () => {
+  test('health endpoints report liveness and readiness', async ({ request }) => {
+    const health = await request.get('/api/health');
+    expect(health.ok()).toBeTruthy();
+    await expect(await health.json()).toEqual(expect.objectContaining({ ok: true, status: 'ok' }));
+
+    const live = await request.get('/api/health/live');
+    expect(live.ok()).toBeTruthy();
+    await expect(await live.json()).toEqual(expect.objectContaining({ ok: true, status: 'alive' }));
+
+    const ready = await request.get('/api/health/ready');
+    expect(ready.ok()).toBeTruthy();
+    const report = await ready.json();
+    expect(report).toEqual(expect.objectContaining({
+      ok: true,
+      status: 'ok',
+      dataDir: expect.objectContaining({ writable: true }),
+      templates: expect.objectContaining({ manifest: true }),
+    }));
+    expect(report.dataDir.path).toBeUndefined();
+  });
+
   test('landing page exposes the product entry point', async ({ page }) => {
     await page.goto('/');
 

@@ -1,4 +1,4 @@
-import { promises as fs, createWriteStream } from 'fs';
+import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import path from 'path';
 import unzipper from 'unzipper';
@@ -7,9 +7,27 @@ import { TEMPLATE_DIR } from '../config/constants.js';
 import { ensureDir } from '../utils/fsUtils.js';
 import { sanitizeUploadPath } from '../utils/pathUtils.js';
 import { safeJoin } from '../utils/pathUtils.js';
+import { collectHealthReport } from '../services/healthService.js';
 
 export function registerHealthRoutes(fastify) {
-  fastify.get('/api/health', async () => ({ ok: true }));
+  fastify.get('/api/health', async () => ({
+    ok: true,
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  }));
+
+  fastify.get('/api/health/live', async () => ({
+    ok: true,
+    status: 'alive',
+    uptimeSeconds: Math.round(process.uptime()),
+    timestamp: new Date().toISOString()
+  }));
+
+  fastify.get('/api/health/ready', async (_req, reply) => {
+    const report = await collectHealthReport();
+    if (!report.ok) reply.code(503);
+    return report;
+  });
 
   fastify.get('/api/templates', async () => {
     const { templates, categories } = await readTemplateManifest();

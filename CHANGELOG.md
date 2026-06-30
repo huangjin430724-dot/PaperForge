@@ -12,6 +12,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 - Playwright browser smoke tests via `npm run e2e`, covering the landing page and project creation-to-editor flow.
 - `npm run seed:demo` to generate a complete local demo project with Chinese manuscript source, LaTeX draft, BibTeX, Figure Agent assets, QA, registry, and report.
 - `npm run backup:data` and `npm run restore:data` for `.tgz` data backup, inspection, and restore workflows.
+- `/api/health/live` and `/api/health/ready` endpoints with readiness checks for data directory and template manifest health.
 - `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.

@@ -71,6 +71,9 @@
 <a href="docs/DATA_BACKUP.md" target="_self">
   <img alt="Backup" src="https://img.shields.io/badge/💾-Backup_&_Restore-8bd3dd?style=for-the-badge" />
 </a>
+<a href="docs/OPERATIONS.md" target="_self">
+  <img alt="Operations" src="https://img.shields.io/badge/📈-Operations-95d5b2?style=for-the-badge" />
+</a>
 <a href="#wechat-group" target="_self">
   <img alt="WeChat" src="https://img.shields.io/badge/💬-WeChat_Group-07C160?style=for-the-badge" />
 </a>
@@ -704,6 +707,14 @@ npm run e2e
 npm run seed:demo
 npm run backup:data
 npm run build
+```
+
+Runtime health checks:
+
+```bash
+curl http://localhost:8787/api/health
+curl http://localhost:8787/api/health/live
+curl http://localhost:8787/api/health/ready
 ```
 
 ---

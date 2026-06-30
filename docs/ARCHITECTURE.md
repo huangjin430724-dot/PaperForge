@@ -52,7 +52,7 @@ flowchart LR
 | `routes/plot.js` | Table-to-chart generation |
 | `routes/transfer.js` | Template transfer and MinerU-assisted PDF workflows |
 | `routes/collab.js` | Real-time collaboration |
-| `routes/health.js` | Health check and template metadata |
+| `routes/health.js` | Liveness/readiness checks and template metadata |
 
 ## Project Data Layout
 
