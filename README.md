@@ -685,6 +685,7 @@ For security reports, see [SECURITY.md](SECURITY.md). For support guidance, see 
 
 Development commands:
 ```bash
+npm run doctor
 npm run dev
 npm run dev:frontend
 npm run dev:backend

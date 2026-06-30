@@ -756,6 +756,7 @@ PaperForge/
 
 开发命令：
 ```bash
+npm run doctor
 npm run dev
 npm run dev:frontend
 npm run dev:backend

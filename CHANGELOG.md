@@ -8,6 +8,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 
 ### Added
 
+- `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.
 - `.env.example` with documented server, LLM, thinking, MinerU, collaboration, tunnel, and plotting configuration.

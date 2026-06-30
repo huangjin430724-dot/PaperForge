@@ -12,6 +12,7 @@ npm run dev
 Useful checks:
 
 ```bash
+npm run doctor
 npm run typecheck
 npm run lint
 npm run test
