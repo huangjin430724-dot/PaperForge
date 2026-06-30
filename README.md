@@ -344,6 +344,7 @@ npm start
 #### Docker Compose
 
 ```bash
+cp .env.example .env  # optional: fill LLM / MinerU / collaboration settings
 docker compose up --build
 ```
 
@@ -399,7 +400,13 @@ pm2 startup
 
 ### Environment Variables
 
-Create a `.env` file in the project root (optional):
+Copy `.env.example` to `.env` and fill in the values you need:
+
+```bash
+cp .env.example .env
+```
+
+You can also create a `.env` file in the project root manually (optional):
 
 ```bash
 # LLM Configuration

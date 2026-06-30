@@ -3,6 +3,9 @@ services:
     build:
       context: .
     image: paperforge:local
+    env_file:
+      - path: .env
+        required: false
     ports:
       - "8787:8787"
     environment:

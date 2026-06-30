@@ -420,6 +420,7 @@ npm start
 #### Docker Compose 一键运行
 
 ```bash
+cp .env.example .env  # 可选：填写 LLM / MinerU / 协作配置
 docker compose up --build
 ```
 
@@ -475,7 +476,13 @@ pm2 startup
 
 ### 环境变量配置
 
-在项目根目录创建 `.env` 文件（可选）：
+复制 `.env.example` 为 `.env` 后按需填写：
+
+```bash
+cp .env.example .env
+```
+
+也可以直接在项目根目录创建 `.env` 文件（可选）：
 
 ```bash
 # LLM 配置

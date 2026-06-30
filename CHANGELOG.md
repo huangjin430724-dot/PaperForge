@@ -8,6 +8,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 
 ### Added
 
+- `.env.example` with documented server, LLM, thinking, MinerU, collaboration, tunnel, and plotting configuration.
 - Dockerfile, Docker Compose configuration, and `.dockerignore` for one-command self-hosted deployment.
 - MIT `LICENSE`, `SECURITY.md`, and `SUPPORT.md` community health files.
 - GitHub Actions CI workflow for lint, tests, typecheck, Figure Agent asset checks, and production build.
