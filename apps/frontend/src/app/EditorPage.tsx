@@ -3217,6 +3217,7 @@ export default function EditorPage() {
   const [paperFigurePlan, setPaperFigurePlan] = useState<PaperFigurePlan | null>(null);
   const [selectedPaperFigurePlanId, setSelectedPaperFigurePlanId] = useState('');
   const [paperFigureQa, setPaperFigureQa] = useState<PaperFigureQaReport | null>(null);
+  const [paperFigureRegistry, setPaperFigureRegistry] = useState<PaperFigureRegistry | null>(null);
   const [plotBusy, setPlotBusy] = useState(false);
   const [plotStatus, setPlotStatus] = useState('');
   const [plotAssetPath, setPlotAssetPath] = useState('');
@@ -5277,6 +5278,24 @@ export default function EditorPage() {
     const content = JSON.stringify(nextRegistry, null, 2);
     await writeFileCompat(registryPath, content);
     setFiles((prev) => ({ ...prev, [registryPath]: content }));
+    setPaperFigureRegistry(nextRegistry);
+  };
+
+  const loadPaperFigureRegistry = async () => {
+    if (!projectId) return;
+    setPlotBusy(true);
+    setPlotStatus('');
+    try {
+      const raw = await ensureFileContent('figures/index.json');
+      const registry = normalizePaperFigureRegistry(safeJsonParse<any>(raw));
+      setPaperFigureRegistry(registry);
+      setPlotStatus(t('已加载图示资产库 · {{count}} 张图', { count: registry.figures.length }));
+    } catch (err) {
+      setPaperFigureRegistry(normalizePaperFigureRegistry(null));
+      setPlotStatus(t('暂无图示资产库，请先生成科研图示。'));
+    } finally {
+      setPlotBusy(false);
+    }
   };
 
   const handlePaperFigurePlan = async () => {
@@ -8179,6 +8198,9 @@ ${prompt}` : ''
                       <button className="btn ghost" onClick={handlePaperFigureQa} disabled={plotBusy || !plotAssetPath}>
                         {t('图示质量检查')}
                       </button>
+                      <button className="btn ghost" onClick={loadPaperFigureRegistry} disabled={plotBusy}>
+                        {t('图示资产库')}
+                      </button>
                     </div>
                     <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，先生成 figure_plan.json 候选方案，再按科研图示 Skill 生成 SVG、.figure.json 和 .figure.qa.json 图示包。')}</div>
                     {plotStatus && <div className="muted">{plotStatus}</div>}
@@ -8199,6 +8221,29 @@ ${prompt}` : ''
                             {t('采用修改提示')}
                           </button>
                         )}
+                      </div>
+                    )}
+                    {paperFigureRegistry && paperFigureRegistry.figures.length > 0 && (
+                      <div className="vision-result">
+                        <div className="muted">{t('图示资产库')}: {paperFigureRegistry.figures.length}</div>
+                        {paperFigureRegistry.figures.slice(0, 8).map((item) => (
+                          <div key={item.assetPath} className="vision-result" style={{ padding: '8px', marginTop: '8px' }}>
+                            <div>{item.title || item.assetPath}</div>
+                            <div className="muted">
+                              {item.skillLabel || item.skill} · {item.label || item.assetPath}
+                              {typeof item.qaScore === 'number' ? ` · QA ${item.qaScore}/100 ${item.qaVerdict || ''}` : ''}
+                            </div>
+                            {item.caption && <div className="muted">{item.caption}</div>}
+                            <div className="row">
+                              <button className="btn ghost small" onClick={() => setPlotAssetPath(item.assetPath)}>
+                                {t('预览')}
+                              </button>
+                              <button className="btn ghost small" onClick={() => insertFigureSnippet(item.assetPath)}>
+                                {t('插入图模板')}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                     {plotAssetPath && (
