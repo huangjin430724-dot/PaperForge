@@ -18,6 +18,7 @@
     "test": "npm --workspaces --if-present run test",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
+    "seed:demo": "node scripts/seed-demo-project.mjs",
     "doctor": "node scripts/doctor.mjs",
     "check:figures": "node scripts/check-figure-assets.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run check:figures && npm run build",

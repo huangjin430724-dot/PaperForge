@@ -29,6 +29,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 
 - GitHub Actions CI.
 - Playwright smoke tests for the landing page and project creation-to-editor flow.
+- Seeded demo project for onboarding, reports, and Figure Agent walkthroughs.
 - Docker / Docker Compose deployment.
 - `.env.example` configuration template.
 - Project Doctor via `npm run doctor`.
@@ -41,7 +42,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 
 - Add a guided onboarding checklist in the UI.
 - Show LLM / LaTeX / Docker readiness from `npm run doctor` results.
-- Add sample projects for Figure Agent, template transfer, and review workflows.
+- Add more sample projects for template transfer and review workflows.
 
 ### Figure Agent Refinement
 
