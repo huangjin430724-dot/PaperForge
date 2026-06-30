@@ -16,6 +16,7 @@
 - [ ] `npm run lint`
 - [ ] `npm run test`
 - [ ] `npm run check:figures`
+- [ ] `npm run demo:check`
 - [ ] `npm run docs:check`
 - [ ] `npm run deps:check`
 - [ ] `npm run licenses:check`

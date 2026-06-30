@@ -62,6 +62,16 @@ npm run restore:data -- --file backups/my-paperforge-backup.tgz --data-dir ./dat
 
 ## Demo Round Trip
 
+Run the full demo validation workflow:
+
+```bash
+npm run demo:check
+```
+
+This seeds a demo project in `.tmp/demo-check`, validates editable Figure Agent assets, creates a backup, restores it, and validates the restored project again.
+
+Manual equivalent:
+
 ```bash
 PaperForge_DATA_DIR=.tmp/demo-data npm run seed:demo
 npm run backup:data -- --data-dir .tmp/demo-data --out .tmp/demo-backup.tgz

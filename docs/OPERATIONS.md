@@ -124,6 +124,7 @@ npm run env:check
 npm run diagnostics:check
 npm run maturity:check
 npm run status:report
+npm run demo:check
 npm run test
 npm run e2e
 ```

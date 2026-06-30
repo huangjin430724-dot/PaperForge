@@ -100,6 +100,7 @@ async function main() {
     '- `npm run check`',
     '- `npm run doctor`',
     '- `npm run maturity:check`',
+    '- `npm run demo:check`',
     '- `npm run release:bundle`',
     '- `npm run release:notes`'
   ]));

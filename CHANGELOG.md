@@ -27,6 +27,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 - `npm run licenses:check` for dependency license metadata and release blocker checks.
 - Figure Agent editable exports for Mermaid `.mmd`, TikZ `.tikz.tex`, and ready-to-insert `.figure.tex` snippets.
 - Project workspace launchpad for first-run actions, template access, system status, and demo onboarding.
+- `npm run demo:check` for seeded demo generation, editable Figure Agent validation, backup, restore, and restored-asset validation.
 - `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.

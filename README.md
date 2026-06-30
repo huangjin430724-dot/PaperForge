@@ -720,6 +720,7 @@ npm run maturity:check
 npm run status:report
 npm run e2e
 npm run seed:demo
+npm run demo:check
 npm run backup:data
 npm run release:bundle
 npm run release:notes
@@ -749,6 +750,7 @@ npm run maturity:check
 npm run status:report
 npm run deps:check
 npm run licenses:check
+npm run demo:check
 npm run release:notes
 ```
 

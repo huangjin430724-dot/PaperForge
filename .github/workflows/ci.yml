@@ -64,18 +64,8 @@ jobs:
       - name: Generate release notes
         run: npm run release:notes -- --out-dir .tmp/release-notes
 
-      - name: Seed demo project
-        run: PaperForge_DATA_DIR=.tmp/ci-demo npm run seed:demo
-
-      - name: Check seeded demo figure assets
-        run: node scripts/check-figure-assets.mjs .tmp/ci-demo/demo-paperforge-showcase --require
-
-      - name: Backup and restore seeded demo data
-        run: |
-          npm run backup:data -- --data-dir .tmp/ci-demo --out .tmp/ci-demo-backup.tgz
-          node scripts/backup-data.mjs list --file .tmp/ci-demo-backup.tgz
-          npm run restore:data -- --file .tmp/ci-demo-backup.tgz --data-dir .tmp/ci-demo-restored --replace
-          node scripts/check-figure-assets.mjs .tmp/ci-demo-restored/demo-paperforge-showcase --require
+      - name: Check demo project workflow
+        run: npm run demo:check -- --work-dir .tmp/ci-demo-check
 
       - name: Create and verify release bundle
         run: |

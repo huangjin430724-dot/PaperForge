@@ -39,6 +39,7 @@ const REQUIRED_FILES = [
   'scripts/diagnostics.mjs',
   'scripts/validate-diagnostics.mjs',
   'scripts/check-figure-assets.mjs',
+  'scripts/demo-check.mjs',
   'scripts/seed-demo-project.mjs',
   'scripts/backup-data.mjs',
   'scripts/release-bundle.mjs'
