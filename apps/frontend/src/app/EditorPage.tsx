@@ -2150,6 +2150,57 @@ function normalizePaperFigureRegistry(raw: any): PaperFigureRegistry {
   };
 }
 
+function buildPaperFigureReport(registry: PaperFigureRegistry) {
+  const rows = registry.figures.map((item, idx) => [
+    String(idx + 1),
+    item.title || item.assetPath,
+    item.skillLabel || String(item.skill || ''),
+    typeof item.qaScore === 'number' ? `${item.qaScore}/100 ${item.qaVerdict || ''}`.trim() : '未检查',
+    item.label || '',
+    item.assetPath
+  ]);
+  const table = [
+    '| # | 图示 | 类型 | QA | Label | SVG |',
+    '|---|---|---|---|---|---|',
+    ...rows.map((row) => `| ${row.map((cell) => String(cell).replace(/\|/g, '\\|')).join(' | ')} |`)
+  ].join('\n');
+  const details = registry.figures.map((item, idx) => {
+    const caption = item.caption || 'Caption.';
+    const label = item.label || `fig:${item.assetPath.replace(/[^a-zA-Z0-9]+/g, '-')}`;
+    return [
+      `## ${idx + 1}. ${item.title || item.assetPath}`,
+      '',
+      `- Skill: ${item.skillLabel || item.skill}`,
+      `- SVG: \`${item.assetPath}\``,
+      `- Package: \`${item.packagePath}\``,
+      item.qaPath ? `- QA: \`${item.qaPath}\`` : '- QA: 未检查',
+      typeof item.qaScore === 'number' ? `- QA Score: ${item.qaScore}/100 ${item.qaVerdict || ''}` : '',
+      `- Caption: ${caption}`,
+      `- Label: \`${label}\``,
+      '',
+      '```latex',
+      '\\begin{figure}[t]',
+      '\\centering',
+      `\\includegraphics[width=0.95\\linewidth]{${item.assetPath}}`,
+      `\\caption{${caption}}`,
+      `\\label{${label}}`,
+      '\\end{figure}',
+      '```'
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+
+  return [
+    '# PaperForge Figure Asset Report',
+    '',
+    `Generated: ${new Date().toISOString()}`,
+    `Figures: ${registry.figures.length}`,
+    '',
+    table,
+    '',
+    details || '暂无科研图示资产。'
+  ].join('\n');
+}
+
 function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null, fallbackSkill: PaperFigureSkill = 'method_pipeline'): PaperFigureSpec {
   const skill = normalizePaperFigureSkill(raw?.skill || fallbackSkill);
   const preset = SCIENTIFIC_FIGURE_SKILLS[skill];
@@ -5298,6 +5349,30 @@ export default function EditorPage() {
     }
   };
 
+  const exportPaperFigureReport = async () => {
+    if (!projectId) return;
+    setPlotBusy(true);
+    setPlotStatus('');
+    try {
+      let registry = paperFigureRegistry;
+      if (!registry) {
+        const raw = await ensureFileContent('figures/index.json');
+        registry = normalizePaperFigureRegistry(safeJsonParse<any>(raw));
+        setPaperFigureRegistry(registry);
+      }
+      const reportPath = 'figures/figure_report.md';
+      const report = buildPaperFigureReport(registry);
+      await writeFileCompat(reportPath, report);
+      setFiles((prev) => ({ ...prev, [reportPath]: report }));
+      setPlotStatus(t('图示资产报告已导出 · figures/figure_report.md'));
+      await refreshTree();
+    } catch (err) {
+      setPlotStatus(t('导出失败: {{error}}', { error: String(err) }));
+    } finally {
+      setPlotBusy(false);
+    }
+  };
+
   const handlePaperFigurePlan = async () => {
     if (!projectId) return;
     setPlotBusy(true);
@@ -8200,6 +8275,9 @@ ${prompt}` : ''
                       </button>
                       <button className="btn ghost" onClick={loadPaperFigureRegistry} disabled={plotBusy}>
                         {t('图示资产库')}
+                      </button>
+                      <button className="btn ghost" onClick={exportPaperFigureReport} disabled={plotBusy}>
+                        {t('导出图示报告')}
                       </button>
                     </div>
                     <div className="muted">{t('论文图示 Agent 会读取当前论文上下文，先生成 figure_plan.json 候选方案，再按科研图示 Skill 生成 SVG、.figure.json 和 .figure.qa.json 图示包。')}</div>
