@@ -40,6 +40,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 - Workspace system status panel for readiness checks and sanitized diagnostics export.
 - Command-line diagnostics bundle generation for support and deployment triage.
 - Diagnostics schema/redaction validation in local checks and GitHub Actions.
+- Environment template and local deployment configuration validation.
 - Issue templates, PR template, contribution guide, support policy, security policy, MIT license.
 - Architecture guide, Figure Agent guide, changelog, and release notes.
 

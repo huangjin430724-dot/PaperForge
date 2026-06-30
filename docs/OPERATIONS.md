@@ -49,6 +49,12 @@ Validate the diagnostics schema and redaction rules:
 npm run diagnostics:check
 ```
 
+Validate `.env.example` and the local `.env` shape:
+
+```bash
+npm run env:check
+```
+
 Typical response:
 
 ```json
@@ -81,6 +87,7 @@ Before sharing, deploying, or backing up an instance:
 ```bash
 npm run doctor
 npm run check:figures
+npm run env:check
 npm run diagnostics:check
 npm run test
 npm run e2e

@@ -768,6 +768,7 @@ npm run dev:frontend
 npm run dev:backend
 npm run check
 npm run check:figures
+npm run env:check
 npm run diagnostics:check
 npm run e2e
 npm run seed:demo
@@ -793,6 +794,13 @@ curl http://localhost:8787/api/health/ready
 npm run diagnostics
 npm --silent run diagnostics -- --stdout
 npm run diagnostics -- --out-dir .tmp/diagnostics
+npm run diagnostics:check
+```
+
+分享部署或反馈问题前，建议运行：
+
+```bash
+npm run env:check
 npm run diagnostics:check
 ```
 
