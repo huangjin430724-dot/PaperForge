@@ -51,6 +51,16 @@ test.describe('PaperForge smoke flows', () => {
 
   test('project workspace exposes a system status panel', async ({ page }) => {
     await page.goto('/projects');
+    const launchpad = page.getByTestId('project-launchpad');
+    await expect(launchpad).toBeVisible();
+    await expect(launchpad.getByTestId('launchpad-create-project')).toBeVisible();
+    await expect(launchpad.getByTestId('launchpad-template-gallery')).toBeVisible();
+    await expect(launchpad.getByTestId('launchpad-system-status')).toBeVisible();
+    await expect(launchpad.getByTestId('launchpad-demo-guide')).toBeVisible();
+    await launchpad.getByTestId('launchpad-system-status').click();
+    await expect(page.getByTestId('project-health-modal')).toBeVisible();
+    await page.getByTestId('project-health-modal').locator('.modal-header .icon-btn').click();
+
     await page.getByTestId('project-health-button').click();
     const modal = page.getByTestId('project-health-modal');
     await expect(modal).toBeVisible();

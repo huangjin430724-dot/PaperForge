@@ -517,6 +517,9 @@ export default function ProjectPage() {
     { key: 'archived', label: t('已归档') },
     { key: 'trash', label: t('回收站') },
   ];
+  const openDemoGuide = () => {
+    window.open('https://github.com/huangjin430724-dot/PaperForge/blob/main/docs/DEMO_PROJECT.md', '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="project-shell">
@@ -627,6 +630,31 @@ export default function ProjectPage() {
         </header>
 
         {status && <div className="status-bar"><div>{status}</div></div>}
+
+        <section className="project-launchpad" data-testid="project-launchpad">
+          <div className="project-launchpad-copy">
+            <div className="project-launchpad-kicker">Quick Start</div>
+            <div className="project-launchpad-title">{t('Projects Workspace')}</div>
+          </div>
+          <div className="project-launchpad-actions">
+            <button className="launchpad-action primary" data-testid="launchpad-create-project" onClick={() => setCreateOpen(true)}>
+              <span className="launchpad-action-index">1</span>
+              <span>{t('新建项目')}</span>
+            </button>
+            <button className="launchpad-action" data-testid="launchpad-template-gallery" onClick={() => setTemplateGalleryOpen(true)}>
+              <span className="launchpad-action-index">2</span>
+              <span>{t('模板库')}</span>
+            </button>
+            <button className="launchpad-action" data-testid="launchpad-system-status" onClick={openHealthPanel}>
+              <span className="launchpad-action-index">3</span>
+              <span>{t('系统状态')}</span>
+            </button>
+            <button className="launchpad-action" data-testid="launchpad-demo-guide" onClick={openDemoGuide}>
+              <span className="launchpad-action-index">4</span>
+              <span>Demo Project</span>
+            </button>
+          </div>
+        </section>
 
         <div className="project-toolbar">
           <input

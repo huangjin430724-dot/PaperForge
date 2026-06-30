@@ -26,6 +26,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 - `npm run status:report` for Markdown project status snapshots covering maturity, docs, dependencies, environment, and diagnostics.
 - `npm run licenses:check` for dependency license metadata and release blocker checks.
 - Figure Agent editable exports for Mermaid `.mmd`, TikZ `.tikz.tex`, and ready-to-insert `.figure.tex` snippets.
+- Project workspace launchpad for first-run actions, template access, system status, and demo onboarding.
 - `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.

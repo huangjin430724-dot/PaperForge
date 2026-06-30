@@ -145,6 +145,7 @@ PaperForge is a local-first LaTeX + AI workspace for academic writing, optimized
 ### 🗂️ Project Management
 
 - **Projects panel**: manage multiple projects
+- **Workspace launchpad**: quick access to project creation, templates, system status, and demo onboarding
 - **File tree**: create/rename/delete/upload/drag
 - **BibTeX**: quick create `references.bib`
 
