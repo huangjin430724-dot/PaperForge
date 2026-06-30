@@ -2145,25 +2145,17 @@ function normalizeFigureSpec(raw: Partial<PaperFigureSpec> | null, fallbackSkill
 }
 
 function renderPaperFigureSvg(spec: PaperFigureSpec) {
-  const nodeWidth = 168;
-  const nodeHeight = 68;
-  const gap = 62;
+  const skill = normalizePaperFigureSkill(spec.skill);
+  const nodeWidth = skill === 'result_analysis' ? 250 : skill === 'model_architecture' ? 240 : 168;
+  const nodeHeight = skill === 'result_analysis' ? 86 : skill === 'model_architecture' ? 58 : 68;
   const marginX = 42;
-  const marginY = 72;
-  const width = Math.max(720, marginX * 2 + spec.nodes.length * nodeWidth + (spec.nodes.length - 1) * gap);
-  const height = 260;
-  const y = marginY + 38;
+  const marginY = 74;
   const colors: Record<string, { fill: string; stroke: string }> = {
     input: { fill: '#e8f3ff', stroke: '#5d8fc8' },
     process: { fill: '#fff7e6', stroke: '#c58a2a' },
     output: { fill: '#eaf7ef', stroke: '#4d9a67' },
     storage: { fill: '#f1ecff', stroke: '#7c67b8' }
   };
-
-  const positions = new Map<string, { x: number; y: number }>();
-  spec.nodes.forEach((node, idx) => {
-    positions.set(node.id, { x: marginX + idx * (nodeWidth + gap), y });
-  });
 
   const wrapLabel = (label: string) => {
     const words = label.split(/\s+/).filter(Boolean);
@@ -2182,29 +2174,121 @@ function renderPaperFigureSvg(spec: PaperFigureSpec) {
     return lines.slice(0, 3);
   };
 
+  const positions = new Map<string, { x: number; y: number }>();
+  let width = 760;
+  let height = 300;
+  let decoration = '';
+
+  if (skill === 'model_architecture') {
+    width = 760;
+    height = Math.max(360, marginY + 58 + spec.nodes.length * (nodeHeight + 24));
+    const x = width / 2 - nodeWidth / 2;
+    spec.nodes.forEach((node, idx) => {
+      positions.set(node.id, { x, y: marginY + 44 + idx * (nodeHeight + 24) });
+    });
+    decoration = [
+      `<rect x="${x - 42}" y="${marginY + 18}" width="${nodeWidth + 84}" height="${height - marginY - 42}" rx="18" fill="#f8f4ed" stroke="#e4d9cc" stroke-width="1.5"/>`,
+      `<text x="${x - 20}" y="${marginY + 44}" font-size="12" font-family="Inter, Arial, sans-serif" fill="#8a7465">Layered Architecture</text>`
+    ].join('\n');
+  } else if (skill === 'timeline') {
+    const gap = 88;
+    width = Math.max(760, marginX * 2 + spec.nodes.length * nodeWidth + (spec.nodes.length - 1) * gap);
+    height = 340;
+    const axisY = 202;
+    spec.nodes.forEach((node, idx) => {
+      positions.set(node.id, {
+        x: marginX + idx * (nodeWidth + gap),
+        y: idx % 2 === 0 ? axisY - nodeHeight - 34 : axisY + 34
+      });
+    });
+    decoration = [
+      `<line x1="${marginX + nodeWidth / 2}" y1="${axisY}" x2="${width - marginX - nodeWidth / 2}" y2="${axisY}" stroke="#d9cbbd" stroke-width="4" stroke-linecap="round"/>`,
+      ...spec.nodes.map((node) => {
+        const pos = positions.get(node.id)!;
+        const cx = pos.x + nodeWidth / 2;
+        return `<circle cx="${cx}" cy="${axisY}" r="7" fill="#b44a2f" stroke="#fffdf8" stroke-width="3"/>`;
+      })
+    ].join('\n');
+  } else if (skill === 'result_analysis') {
+    const columns = Math.min(2, Math.max(1, spec.nodes.length));
+    const rows = Math.ceil(spec.nodes.length / columns);
+    const gapX = 42;
+    const gapY = 30;
+    width = 720;
+    height = Math.max(330, marginY + 48 + rows * nodeHeight + Math.max(0, rows - 1) * gapY + 44);
+    const gridWidth = columns * nodeWidth + (columns - 1) * gapX;
+    const startX = width / 2 - gridWidth / 2;
+    spec.nodes.forEach((node, idx) => {
+      const col = idx % columns;
+      const row = Math.floor(idx / columns);
+      positions.set(node.id, {
+        x: startX + col * (nodeWidth + gapX),
+        y: marginY + 48 + row * (nodeHeight + gapY)
+      });
+    });
+    decoration = `<text x="${width / 2}" y="${marginY + 28}" text-anchor="middle" font-size="12" font-family="Inter, Arial, sans-serif" fill="#8a7465">Findings, evidence, and interpretation</text>`;
+  } else if (skill === 'system_overview') {
+    width = 820;
+    height = 420;
+    const center = { x: width / 2 - nodeWidth / 2, y: 190 };
+    spec.nodes.forEach((node, idx) => {
+      if (idx === 0) {
+        positions.set(node.id, center);
+        return;
+      }
+      const angle = (-90 + (idx - 1) * (360 / Math.max(1, spec.nodes.length - 1))) * Math.PI / 180;
+      const rx = 255;
+      const ry = 118;
+      positions.set(node.id, {
+        x: width / 2 + Math.cos(angle) * rx - nodeWidth / 2,
+        y: 210 + Math.sin(angle) * ry - nodeHeight / 2
+      });
+    });
+    decoration = [
+      `<ellipse cx="${width / 2}" cy="210" rx="310" ry="158" fill="#f8f4ed" stroke="#e4d9cc" stroke-width="1.5"/>`,
+      `<text x="${width / 2}" y="392" text-anchor="middle" font-size="12" font-family="Inter, Arial, sans-serif" fill="#8a7465">System boundary and artifact flow</text>`
+    ].join('\n');
+  } else {
+    const gap = 62;
+    width = Math.max(720, marginX * 2 + spec.nodes.length * nodeWidth + (spec.nodes.length - 1) * gap);
+    height = 260;
+    const y = marginY + 38;
+    spec.nodes.forEach((node, idx) => {
+      positions.set(node.id, { x: marginX + idx * (nodeWidth + gap), y });
+    });
+  }
+
   const edges = spec.edges.map((edge, idx) => {
     const from = positions.get(edge.from);
     const to = positions.get(edge.to);
     if (!from || !to) return '';
-    const x1 = from.x + nodeWidth;
-    const y1 = from.y + nodeHeight / 2;
-    const x2 = to.x;
-    const y2 = to.y + nodeHeight / 2;
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const horizontal = Math.abs(dx) >= Math.abs(dy);
+    const x1 = horizontal ? from.x + (dx >= 0 ? nodeWidth : 0) : from.x + nodeWidth / 2;
+    const y1 = horizontal ? from.y + nodeHeight / 2 : from.y + (dy >= 0 ? nodeHeight : 0);
+    const x2 = horizontal ? to.x + (dx >= 0 ? 0 : nodeWidth) : to.x + nodeWidth / 2;
+    const y2 = horizontal ? to.y + nodeHeight / 2 : to.y + (dy >= 0 ? 0 : nodeHeight);
+    const c1x = horizontal ? x1 + (dx >= 0 ? 28 : -28) : x1;
+    const c1y = horizontal ? y1 : y1 + (dy >= 0 ? 28 : -28);
+    const c2x = horizontal ? x2 + (dx >= 0 ? -28 : 28) : x2;
+    const c2y = horizontal ? y2 : y2 + (dy >= 0 ? -28 : 28);
     const label = edge.label
-      ? `<text x="${(x1 + x2) / 2}" y="${y1 - 10}" text-anchor="middle" font-size="11" fill="#6f6258">${escapeXml(edge.label)}</text>`
+      ? `<text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 8}" text-anchor="middle" font-size="11" font-family="Inter, Arial, sans-serif" fill="#6f6258">${escapeXml(edge.label)}</text>`
       : '';
-    return `<path d="M ${x1} ${y1} C ${x1 + 24} ${y1}, ${x2 - 24} ${y2}, ${x2} ${y2}" fill="none" stroke="#8b8178" stroke-width="2" marker-end="url(#arrow-${idx})"/><marker id="arrow-${idx}" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#8b8178"/></marker>${label}`;
+    return `<path d="M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}" fill="none" stroke="#8b8178" stroke-width="${skill === 'result_analysis' ? 1.4 : 2}" opacity="${skill === 'result_analysis' ? 0.65 : 1}" marker-end="url(#arrow)"/>${label}`;
   }).join('\n');
 
-  const nodes = spec.nodes.map((node) => {
+  const nodes = spec.nodes.map((node, idx) => {
     const pos = positions.get(node.id)!;
     const color = colors[node.type || 'process'] || colors.process;
     const lines = wrapLabel(node.label);
+    const radius = skill === 'system_overview' && idx === 0 ? 18 : skill === 'timeline' ? 14 : 10;
     const text = lines.map((line, idx) =>
       `<tspan x="${pos.x + nodeWidth / 2}" dy="${idx === 0 ? 0 : 16}">${escapeXml(line)}</tspan>`
     ).join('');
     return [
-      `<rect x="${pos.x}" y="${pos.y}" width="${nodeWidth}" height="${nodeHeight}" rx="10" fill="${color.fill}" stroke="${color.stroke}" stroke-width="2"/>`,
+      `<rect x="${pos.x}" y="${pos.y}" width="${nodeWidth}" height="${nodeHeight}" rx="${radius}" fill="${color.fill}" stroke="${color.stroke}" stroke-width="2"/>`,
       `<text x="${pos.x + nodeWidth / 2}" y="${pos.y + 30}" text-anchor="middle" font-size="13" font-family="Inter, Arial, sans-serif" fill="#2d2926">${text}</text>`
     ].join('\n');
   }).join('\n');
@@ -2214,9 +2298,10 @@ function renderPaperFigureSvg(spec: PaperFigureSpec) {
     '<rect width="100%" height="100%" fill="#fffdf8"/>',
     `<text x="${width / 2}" y="36" text-anchor="middle" font-size="20" font-family="Inter, Arial, sans-serif" font-weight="700" fill="#24211f">${escapeXml(spec.title || 'Method Pipeline')}</text>`,
     '<defs>',
-    edges.match(/<marker[\s\S]*?<\/marker>/g)?.join('\n') || '',
+    '<marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#8b8178"/></marker>',
     '</defs>',
-    edges.replace(/<marker[\s\S]*?<\/marker>/g, ''),
+    decoration,
+    edges,
     nodes,
     '</svg>'
   ].join('\n');
