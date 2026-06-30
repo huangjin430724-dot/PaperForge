@@ -701,6 +701,7 @@ For security reports, see [SECURITY.md](SECURITY.md). For support guidance, see 
 Development commands:
 ```bash
 npm run doctor
+npm run diagnostics
 npm run dev
 npm run dev:frontend
 npm run dev:backend
@@ -723,6 +724,14 @@ curl http://localhost:8787/api/health/ready
 ```
 
 The project workspace also includes a system status panel that surfaces the readiness report without leaving the UI. The panel can copy or download a sanitized diagnostics JSON file for bug reports and deployment support.
+
+For command-line support bundles:
+
+```bash
+npm run diagnostics
+npm --silent run diagnostics -- --stdout
+npm run diagnostics -- --out-dir .tmp/diagnostics
+```
 
 ---
 

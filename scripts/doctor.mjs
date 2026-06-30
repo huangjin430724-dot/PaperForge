@@ -74,6 +74,7 @@ function checkFiles() {
     'docker-compose.yml',
     'docs/ARCHITECTURE.md',
     'docs/FIGURE_AGENT.md',
+    'scripts/diagnostics.mjs',
     'scripts/check-figure-assets.mjs'
   ];
   for (const file of required) {
@@ -89,7 +90,7 @@ function checkPackageScripts() {
   const pkg = readJson('package.json');
   if (!pkg) return;
   const scripts = pkg.scripts || {};
-  const requiredScripts = ['dev', 'start', 'build', 'typecheck', 'lint', 'test', 'check:figures', 'check'];
+  const requiredScripts = ['dev', 'start', 'build', 'typecheck', 'lint', 'test', 'doctor', 'diagnostics', 'check:figures', 'check'];
   for (const script of requiredScripts) {
     if (!scripts[script]) errors.push(`package.json missing script: ${script}`);
   }

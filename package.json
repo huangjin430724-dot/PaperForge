@@ -26,6 +26,7 @@
     "release:verify": "node scripts/release-bundle.mjs verify",
     "security:scan": "node scripts/security-scan.mjs",
     "doctor": "node scripts/doctor.mjs",
+    "diagnostics": "node scripts/diagnostics.mjs",
     "check:figures": "node scripts/check-figure-assets.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run check:figures && npm run security:scan && npm run build",
     "tunnel": "npm run build && cross-env PaperForge_TUNNEL=localtunnel node apps/backend/src/index.js",

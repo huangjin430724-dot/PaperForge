@@ -762,6 +762,7 @@ PaperForge/
 开发命令：
 ```bash
 npm run doctor
+npm run diagnostics
 npm run dev
 npm run dev:frontend
 npm run dev:backend
@@ -784,6 +785,14 @@ curl http://localhost:8787/api/health/ready
 ```
 
 项目工作区也提供“系统状态”面板，可直接在界面中查看 readiness 检查结果，并可复制或下载脱敏诊断 JSON，便于反馈问题和部署排障。
+
+命令行也可以生成脱敏诊断包：
+
+```bash
+npm run diagnostics
+npm --silent run diagnostics -- --stdout
+npm run diagnostics -- --out-dir .tmp/diagnostics
+```
 
 ---
 

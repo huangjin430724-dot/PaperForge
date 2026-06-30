@@ -16,6 +16,7 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 - `npm run release:bundle` and `npm run release:verify` for source release archives with manifest and SHA256 checks.
 - `npm run security:scan` for tracked-file secret and private artifact checks, plus Dependabot configuration for npm and GitHub Actions.
 - Project workspace system status panel backed by `/api/health/ready`, with copy/download diagnostics export for support.
+- `npm run diagnostics` for sanitized command-line support bundles.
 - `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.

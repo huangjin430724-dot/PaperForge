@@ -27,6 +27,22 @@ Example:
 curl http://localhost:8787/api/health/ready
 ```
 
+## Diagnostics Bundle
+
+Generate a sanitized diagnostics JSON file when reporting deployment or local runtime issues:
+
+```bash
+npm run diagnostics
+```
+
+The bundle includes package version, Git branch and commit, dirty working tree status, Node/npm versions, platform, key environment variable presence, and the readiness report. It records whether sensitive environment variables are present, but it does not include API keys, collaboration secrets, private manuscript content, or the absolute data directory path.
+
+Use stdout mode for CI logs or support forms:
+
+```bash
+npm --silent run diagnostics -- --stdout
+```
+
 Typical response:
 
 ```json
