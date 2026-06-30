@@ -763,6 +763,7 @@ npm run dev:frontend
 npm run dev:backend
 npm run check
 npm run check:figures
+npm run e2e
 npm run build
 ```
 

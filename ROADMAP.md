@@ -28,6 +28,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 ### Open Source Maturity
 
 - GitHub Actions CI.
+- Playwright smoke tests for the landing page and project creation-to-editor flow.
 - Docker / Docker Compose deployment.
 - `.env.example` configuration template.
 - Project Doctor via `npm run doctor`.
@@ -71,7 +72,7 @@ This roadmap summarizes the current maturity of PaperForge and the next areas of
 
 ### Quality and Testing
 
-- Add Playwright smoke tests for core UI flows.
+- Expand Playwright smoke tests to cover Figure Agent demos and template transfer flows.
 - Add fixture-based tests for Figure Agent package and report generation.
 - Reduce existing lint warnings incrementally.
 

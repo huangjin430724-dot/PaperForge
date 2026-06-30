@@ -18,6 +18,9 @@ AGENTS.md
 brand-backup-*/
 outputs/
 reports/
+.tmp/
+test-results/
+playwright-report/
 
 # Editor and OS noise
 Thumbs.db

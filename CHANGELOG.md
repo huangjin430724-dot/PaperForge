@@ -9,13 +9,14 @@ This project follows a practical changelog style inspired by Keep a Changelog. D
 ### Added
 
 - `ROADMAP.md` with shipped capabilities, near-term plans, longer-term direction, and non-goals.
+- Playwright browser smoke tests via `npm run e2e`, covering the landing page and project creation-to-editor flow.
 - `npm run doctor` environment and project health check for onboarding and deployment diagnostics.
 - `docs/FIGURE_AGENT.md` with demo steps, artifact reference, QA workflow, registry/report usage, and validation commands.
 - `docs/ARCHITECTURE.md` with system overview, backend routes, data layout, Figure Agent workflow, deployment, and quality gates.
 - `.env.example` with documented server, LLM, thinking, MinerU, collaboration, tunnel, and plotting configuration.
 - Dockerfile, Docker Compose configuration, and `.dockerignore` for one-command self-hosted deployment.
 - MIT `LICENSE`, `SECURITY.md`, and `SUPPORT.md` community health files.
-- GitHub Actions CI workflow for lint, tests, typecheck, Figure Agent asset checks, and production build.
+- GitHub Actions CI workflow for lint, tests, typecheck, Figure Agent asset checks, production build, and Playwright smoke tests.
 - GitHub issue templates for bug reports, feature requests, and Figure Agent feedback.
 - Pull request template with verification checklist and Figure Agent artifact fields.
 - `CONTRIBUTING.md` with development commands, quality gates, and Figure Agent contribution rules.

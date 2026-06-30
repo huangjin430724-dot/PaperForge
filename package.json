@@ -16,6 +16,8 @@
     "typecheck": "npm --workspace apps/frontend run typecheck",
     "lint": "eslint .",
     "test": "npm --workspaces --if-present run test",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
     "doctor": "node scripts/doctor.mjs",
     "check:figures": "node scripts/check-figure-assets.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run check:figures && npm run build",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "eslint": "^10.4.0",
